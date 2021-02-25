@@ -1,5 +1,5 @@
 ---
-title: "Sensitivity auditing of global irrigation water withdrawal estimates"
+title: "The accuracy mirage in the estimation of global irrigation water withdrawals"
 subtitle: "R code"
 author: "Arnald Puy"
 header-includes:
@@ -10,6 +10,7 @@ header-includes:
   - \usepackage{enumitem}
   - \usepackage{lmodern}
   - \usepackage[T1]{fontenc}
+  - \usepackage{hyperref}
 output:
   pdf_document:
     fig_caption: yes
@@ -24,7 +25,9 @@ output:
     keep_md: true
 link-citations: yes
 fontsize: 11pt
-bibliography: /Users/arnald/Documents/bibtex/ERC-sensitivity.bib
+bibliography: 
+  - /Users/arnald/Documents/bibtex/ERC-sensitivity.bib
+  - /Users/arnald/Documents/bibtex/LATEX_water_withdrawal.bib
 ---
 
 ```{r setup, include=FALSE}
@@ -33,9 +36,33 @@ knitr::opts_chunk$set(echo = TRUE, dev = "tikz")
 
 \newpage
 
+# Presentation
+
+This document presents the workflow of the paper "The accuracy mirage in the estimation of global irrigation water withdrawals". The abstract is the following:
+
+*We review the main uncertainties in the calculation of irrigation water withdrawals by large-scale models, which are widely used by regulatory agencies to inform global policies on agriculture and climate change. We show that the apparent precision characterizing their outputted values results from neglecting several important ambiguities and is therefore to be reassessed. If a global uncertainty and sensitivity analysis is performed, their estimates rapidly turn into intervals that span several orders of magnitude. This review stresses the importance of properly exploring the ambiguities involved in the estimation of global agricultural water demands, and urges for a thorough debate where the trade-offs between computational complexity, robustness and accuracy are thoroughly assessed.*
+
+\vspace{4mm}
+
+Global irrigation water withdrawals are usually estimated by slightly varying the following Equation, which is computed at the grid cell level:
+
+\begin{equation}
+y=\frac{I_a (ET_c - P)}{E_p}\,,
+\label{eq:water}
+\end{equation}
+
+where $y$ is a scalar representing irrigation water withdrawals, $I_a$ the irrigated area, $ET_c$ the crop evapotranspiration, $P$ the precipitation and $E_p$ the irrigation efficiency.
+
+Once all datasets required for the analysis have been acquired from the appropriate sources, the results of the paper should be fully reproducible with the code below in any personal computer. Questions about the code or the computational design should be addressed to A. Puy (\href{mailto:apuy@princeton.edu}{apuy@princeton.edu}, or \href{mailto:arnald.puy@pm.me}{arnald.puy@pm.me}).
+
+\newpage
+
+# Preliminary functions
+We start by creating a function to load all required libraries for the analysis in one go, and a custom theme for the figures. We also set a checkpoint to ensure that our code is fully reproducible for anyone anytime. 
+
 ```{r initial, results="hide", message=FALSE, warning=FALSE}
 
-# PRELIMINARY STEPS ----------------------------------------------------------------
+# PRELIMINARY STEPS --------------------------------------------------------------
 
 # Install and load packages in one go
 loadPackages <- function(x) {
@@ -46,6 +73,7 @@ loadPackages <- function(x) {
     }
   }
 }
+
 # Load the packages
 loadPackages(c(
   "data.table", "tidyverse", "sensobol", "wesanderson",
@@ -56,30 +84,102 @@ loadPackages(c(
 # Custom theme
 theme_AP <- function() {
   theme_bw() +
-    theme(
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      legend.background = element_rect(
-        fill = "transparent",
-        color = NA
-      ),
-      legend.key = element_rect(
-        fill = "transparent",
-        color = NA
-      ),
-      legend.position = "top",
-      strip.background = element_rect(fill = "white")
-    )
+    theme(panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          legend.background = element_rect(fill = "transparent",
+                                           color = NA),
+          legend.key = element_rect(fill = "transparent",
+                                    color = NA),
+          legend.position = "top",
+          strip.background = element_rect(fill = "white"))
+}
+
+# set checkpoint
+dir.create(".checkpoint")
+library("checkpoint")
+
+checkpoint("2021-02-22", 
+           R.version ="4.0.3", 
+           checkpointLocation = getwd())
+```
+
+# Irrigated area ($I_a$)
+Here we plot the differences in irrigated area at the country level reported by the FAO-GMIA, the IWMI-GMIA, the GRIPC, Aquastat and FAOSTAT. The dataset `meier.csv` includes the data produced by @Meier2018, which can be found in its Supplementary Materials file. 
+
+```{r irrigated_areas, cache=TRUE}
+
+# PLOT UNCERTAINTY IN IRRIGATED AREAS ----------------------------------------------
+
+# Read data compiled by Meier
+irrigated.areas <- fread("meier.csv")
+
+# Arrange and drop Oceania and 0's
+dt <- melt(irrigated.areas, measure.vars = 4:9) %>%
+  .[!Continent == "Oceania"] %>%
+  .[!value == 0]
+
+# List to plot
+continent_list <- list(c("Africa", "Americas"), c("Asia", "Europe"))
+
+# Plot
+gg <- list()
+for (i in 1:length(continent_list)) {
+  gg[[i]] <- ggplot(dt[Continent %in% continent_list[[i]]], 
+                    aes(reorder(Country, value), value)) +
+    geom_point(stat = "identity", aes(color = variable)) +
+    scale_y_log10(
+      breaks = trans_breaks("log10", function(x) 10^x),
+      labels = trans_format("log10", math_format(10^.x))
+    ) +
+    coord_flip() +
+    scale_color_manual(
+      name = "Dataset",
+      values = c(
+        "yellowgreen", "seagreen4", "magenta3",
+        "sienna3", "turquoise2", "khaki3"
+      )
+    ) +
+    labs(
+      x = "",
+      y = "Irrigated area (ha)"
+    ) +
+    facet_wrap(~Continent, scales = "free_y") +
+    theme_AP()
 }
 ```
 
-# ET_0 and ET_c
+```{r plot_irrigated_areas, cache=TRUE, dependson="irrigated_areas", fig.height=6.5, fig.width=5.7, warning=FALSE, message=FALSE, fig.cap="Irrigated area estimates produced for Africa and the Americas by the FAO-GMIA [@Siebert2013], the IWMI--GIAM [@Thenkabail2009], the GRIPC [@Salmon2015], Meier's map [@Meier2018], Aquastat [@FAO2016b] and FAOSTAT [@FAO2017a]. The data has been retrieved from @Meier2018"}
+gg[[1]]
+```
 
-# k_c values for salt cedar
+```{r plot_irrigated_areas2, cache=TRUE, dependson="irrigated_areas", fig.height=6.5, fig.width=5.7, warning=FALSE, message=FALSE, fig.cap="Irrigated area estimates produced for Asia and Europe by the FAO-GMIA [@Siebert2013], the IWMI--GIAM [@Thenkabail2009], the GRIPC [@Salmon2015], Meier's map [@Meier2018], Aquastat [@FAO2016b] and FAOSTAT [@FAO2017a]. The data has been retrieved from @Meier2018"}
+gg[[2]]
+```
 
-```{r plot_kc, cache=TRUE, fig.height=2.5, fig.width=5.5}
+# The crop evapotranspiration ($ET_c$)
 
-# K_C VALUES FOR SALT CEDAR --------------------------------------------------------
+We recall that $ET_c$ is calculated as
+
+\begin{equation}
+ET_c=k_cET_0\,,
+\end{equation}
+
+where $k_c$ is the crop coefficient and $ET_0$ is the reference crop evapotranspiration, usually alfalfa or grass.
+
+## Salt cedar crop coefficients ($k_c$)
+Here we exemplify the uncertainty in the crop coefficient using the data compiled by @Nichols2004 for salt cedar in the Bosque del Apache region, New Mexico. The data has been extracted from their Figure 10 using the free online tool WebPlotDigitizer, which can be found in https://apps.automeris.io/wpd/. 
+We load two datasets and retrieve data only for month 5:
+
+\begin{itemize}
+\item `kc.evolution.cedar.csv`, which includes the data on the mean $k_c$ values.
+\item `kc.evolution.point.csv`, which includes the individual $k_c$ data points.
+\end{itemize}
+
+Then we illustrate the oasis effect on $k_c$ values using the data shown by @Allen1998 in their Figure 46, which we extract with the same online tool. Our dataset is `oasis_effect.csv`.
+
+```{r plot_kc, cache=TRUE, fig.height=2.5, fig.width=5.5, fig.cap="The crop coefficient. a) Evolution of $k_c$ values for salt cedar. The solid black line is the mean $k_c$, the red dots show the individual measured values (adapted from Figure 10 in @Nichols2004), and the vertical, dashed black line marks the values selected for the global sensitivity analysis presented in Figure~1c and d. b) Oasis effect on $k_c$ values (adapted from Figure 46 in @Allen1998)."}
+
+# K_C VALUES FOR SALT CEDAR ------------------------------------------------------
 
 # Read in dataset
 kc_evolution_cedar <- fread("kc_evolution_cedar.csv")
@@ -117,388 +217,251 @@ b <- ggplot(oasis, aes(x = x, y = y, group = name, linetype = name)) +
 cowplot::plot_grid(a, b, ncol = 2, labels = "auto", rel_widths = c(0.45, 0.55))
 ```
 
+```{r kc_only, cache=TRUE, dependson="plot_kc", fig.height=2.2, fig.width=2.4}
+
+# PLOT K_C VALUES FOR SALT CEDAR ONLY --------------------------------------------
+
+a
+```
+
+
+## The reference evapotranpiration ($ET_0$)
+We illustrate the effect of uncertainties in the computation of $ET_0$ using the Priestley-Taylor and the FAO-56 Penman-Monteith formulae. The former reads as follows
+
+\begin{equation}
+ET_0 = \alpha \frac{\Delta A}{\Delta + \gamma}\,,
+\label{eq:priestley}
+\end{equation}
+
+whereas the latter, as
+\begin{equation}
+ET_0 = \frac{0.408 \Delta A + \gamma \frac{900}{T_a + 273} wv}{\Delta + \gamma (1 + 0.34w)}\,,
+\label{eq:fao56}
+\end{equation}
+
+where $A$ is the net radiation minus the soil heat flux, $\Delta$ the gradient of saturated vapour pressure, $\gamma$ the psychometric constant, $\alpha$ the Priestley-Taylor constant, $T_a$ the mean daily air temperature at 2m, $w$ the average daily wind speed at 2m and $v$ the vapor pressure deficit (kPA). See @Allen1998 for an explanation of the coefficients.
+
+The uncertainty in the inputs is described following @Nichols2004. See Table 1 of the main manuscript for the distributions selected. Our uncertainty and sensitivity analysis is done as explained in the Supplementary Materials file. We set the sample size of the base sample matrices at $N=2^{12}$ and the number of bootstrap replicas of the Sobol' indices at $R=10^3$.
+
 ```{r calculations, cache=TRUE, dependson="plot_kc"}
 
-# Define settings
-# -----------------------------------------------
+# DEFINE SETTINGS ----------------------------------------------------------------
 
 N <- 2^12
 R <- 10^3
 
-# Define ET_0 Equations
-# -----------------------------------------------
+# LISTED FUNCTIONS -------------------------------
 
-# Priestley and Taylor
-pt_fun <- function(alpha, delta, gamma, A, k_c = 1) {
-  out <- k_c * (alpha * ((delta * A) / (gamma + delta)))
+et0_fun <- list(
+
+  "pt" = function(alpha, delta, gamma, A, k_c = 1)
+    k_c * (alpha * ((delta * A) / (gamma + delta))),
+
+  "pm" = function(delta, A, gamma, T_a, w, v, k_c = 1)
+    k_c * ((0.408 * delta * A + gamma * (900 / (T_a + 273)) * w * v) /
+                    delta + gamma * (1 + 0.34 * w))
+)
+
+mat_transform <- function(mat, method, et_c = FALSE) {
+
+  if (method == "pt") {
+    mat[, "alpha"] <- qunif(mat[, "alpha"], 1.26 + 1.26 * - 0.1, 1.26 + 1.26 * 0.1)
+    mat[, "delta"] <- qunif(mat[, "delta"], 0.21 + 0.21 * - 0.005, 0.21 + 0.21 * 0.005)
+    mat[, "gamma"] <- qunif(mat[, "gamma"], 0.059 + 0.059 * - 0.001, 0.059 + 0.059 * 0.001)
+    mat[, "A"] <- qunif(mat[, "A"], 350 + 350 * - 0.15, 350 + 350 * 0.15)
+
+  } else if (method == "pm") {
+    mat[, "delta"] <- qunif(mat[, "delta"], 0.21 + 0.21 * - 0.005, 0.21 + 0.21 * 0.005)
+    mat[, "gamma"] <- qunif(mat[, "gamma"], 0.059 + 0.059 * - 0.001, 0.059 + 0.059 * 0.001)
+    mat[, "A"] <- qunif(mat[, "A"], 350 + 350 * - 0.15, 350 + 350 * 0.15)
+    mat[, "T_a"] <- qunif(mat[, "T_a"], 27 + 27 * - 0.01, 27 + 27 * 0.01)
+    mat[, "w"] <- qunif(mat[, "w"], 2.5 + 2.5 * - 0.05, 2.5 + 2.5 * 0.05)
+    mat[, "v"] <- qunif(mat[, "v"], 2.49 + 2.49 * - 0.04, 2.49 + 2.49 * 0.04)
+  }
+
+  if (et_c == TRUE) {
+    mat[, "k_c"] <- qunif(mat[, "k_c"], min(cedar.min.max$y), max(cedar.min.max$y))
+  }
+  return(mat)
+}
+
+params.shared <- c("delta", "gamma", "A")
+params.pt <- c(params.shared, "alpha")
+params.pm <- c(params.shared, "T_a", "v", "w")
+
+# COMPUTATION OF ET_0 ------------------------------------------------------------
+
+y <- list()
+
+for (i in list("pt", "pm")) {
+
+  if(i == "pt") {
+
+    mat <- sobol_matrices(N = N, params = params.pt)
+    mat <- mat_transform(mat = mat, method = i, et_c = FALSE)
+    y[[i]] <- et0_fun[[i]](alpha = mat[, "alpha"],
+                      delta = mat[, "delta"],
+                      gamma = mat[, "gamma"],
+                      A = mat[, "A"])
+
+  } else if (i == "pm") {
+
+    mat <- sobol_matrices(N = N, params = params.pm)
+    mat <- mat_transform(mat = mat, method = i, et_c = FALSE)
+    y[[i]] <- et0_fun[[i]](delta = mat[, "delta"],
+                      A = mat[, "A"],
+                      gamma = mat[, "gamma"],
+                      T_a = mat[, "T_a"],
+                      w = mat[, "w"],
+                      v = mat[, "v"])
+  }
+}
+
+# COMPUTATION OF ET_C ------------------------------------------------------------
+
+y.kc <- list()
+
+for(i in list("pt", "pm")) {
+
+  if(i == "pt") {
+
+    mat <- sobol_matrices(N = N, params = c(params.pt, "k_c"))
+    mat <- mat_transform(mat = mat, method = i, et_c = TRUE)
+    y.kc[[i]] <- et0_fun[[i]](alpha = mat[, "alpha"],
+                           delta = mat[, "delta"],
+                           gamma = mat[, "gamma"],
+                           A = mat[, "A"],
+                           k_c = mat[, "k_c"])
+
+  } else if (i == "pm") {
+
+    mat <- sobol_matrices(N = N, params = c(params.pm, "k_c"))
+    mat <- mat_transform(mat = mat, method = i, et_c = TRUE)
+    y.kc[[i]] <- et0_fun[[i]](delta = mat[, "delta"],
+                           A = mat[, "A"],
+                           gamma = mat[, "gamma"],
+                           T_a = mat[, "T_a"],
+                           w = mat[, "w"],
+                           v = mat[, "v"],
+                           k_c = mat[, "k_c"])
+  }
+}
+
+# FUNCTION TO EXTRACT UNCERTAINTY ------------------------------------------------
+
+extract_unc <- function(out, N = N) {
+  value_output <- unlist(lapply(out, function(x) x[1:N]), use.names = FALSE)
+  da <- data.table(value_output)[, method:= rep(names(et0_fun), each = N)] %>%
+    .[, method:= toupper(method)]
+  gg <- ggplot(da, aes(value_output, fill = method)) +
+    geom_histogram(alpha = 0.3, color = "black", position = "identity") +
+    scale_fill_manual(name = "Method",
+                      values = wes_palette(n = 2, name = "Chevalier1")) +
+    theme_AP() +
+    theme(legend.position = "none")
+  return(gg)
+}
+
+# PLOT UNCERTAINTY ---------------------------------------------------------------
+
+plots.unc <- lapply(list(y, y.kc), function(x) extract_unc(out = x, N = N))
+
+plots.unc[[1]] <- plots.unc[[1]] + labs(x = "$ET_0$ (mm d$^{-1}$)", y = "Counts") +
+  scale_x_continuous(limits = c(0, 800))
+plots.unc[[2]] <- plots.unc[[2]] + labs(x = "$ET_c$ (mm d$^{-1}$)", y = "Counts") +
+  scale_x_continuous(limits = c(0, 800))
+
+# SOBOL' INDICES -----------------------------------------------------------------
+
+params.pt.plot <- c("$\\Delta$", "$\\gamma$", "$A$", "$\\alpha$")
+params.pm.plot <- c("$\\Delta$", "$\\gamma$", "$A$", "$T_a$", "$v$", "$w$")
+first <- "jansen"
+
+# ET0 --------------------------
+
+ind <- list()
+
+for (i in list("pt", "pm")) {
+  
+  if (i == "pt") {
+    params <- params.pt.plot
+    
+  } else if (i == "pm") {
+    params <- params.pm.plot
+  }
+  
+  ind[[i]] <- sobol_indices(Y = y[[i]], N = N, params = params,
+                            first = first, boot = TRUE, R = R)
+}
+
+# ET0 --------------------------
+
+ind.kc <- list()
+
+for( i in list("pt", "pm")) {
+  
+  if (i == "pt") {
+    params <- c(params.pt.plot, "$k_c$")
+    
+  } else if (i == "pm") {
+    params <- c(params.pm.plot, "$k_c$")
+  }
+  
+  ind.kc[[i]] <- sobol_indices(Y = y.kc[[i]], N = N, params = params,
+                               first = first, R = R, boot = TRUE)
+}
+
+# FUNCTION TO EXTRACT SOBOL' INDICES ---------------------------------------------
+
+extract_sobol <- function(data) {
+  out <- rbindlist(data, idcol = "method") %>%
+    .[, method:= toupper(method)] %>%
+    .[, parameters:= factor(parameters, levels = c("$\\Delta$", "$\\gamma$",
+                                                   "$A$", "$T_a$", "$w$", "$v$",
+                                                   "$\\alpha$", "$k_c$"))] %>%
+    plot_sobol(.) +
+    theme(legend.position = "none") +
+    facet_grid(~ method,
+               scales = "free_x",
+               space = "free_x")
   return(out)
 }
 
-# Penman Monteith
-pm_fun <- function(delta, A, gamma, t, w, v, k_c = 1) {
-  out <- k_c * ((0.408 * delta * A + gamma * (900 / (t + 273)) * w * v) /
-    delta + gamma * (1 + 0.34 * w))
-  return(out)
-}
+# PLOT SOBOL  --------------------------------------------------------------------
 
-# Define sampling matrices
-# -----------------------------------------------
-
-# Priestley and Taylor
-
-params <- c("alpha", "delta", "gamma", "A")
-mat <- sobol_matrices(N = N, params = params)
-mat[, "alpha"] <- qunif(mat[, "alpha"], 1.26 + 1.26 * -0.1, 1.26 + 1.26 * 0.1)
-mat[, "delta"] <- qunif(mat[, "delta"], 0.21 + 0.21 * -0.005, 0.21 + 0.21 * 0.005)
-mat[, "gamma"] <- qunif(mat[, "gamma"], 0.059 + 0.059 * -0.001, 0.059 + 0.059 * 0.001)
-mat[, "A"] <- qunif(mat[, "A"], 350 + 350 * -0.15, 350 + 350 * 0.15)
-
-# Run model
-y.pt <- pt_fun(
-  alpha = mat[, "alpha"],
-  delta = mat[, "delta"],
-  gamma = mat[, "gamma"],
-  A = mat[, "A"]
-)
-
-# Compute Sobol' indices
-params.pt <- c("$\\alpha$", "$\\Delta$", "$\\gamma$", "$A$")
-ind.pt <- sobol_indices(
-  Y = y.pt, N = N, params = params.pt,
-  first = "jansen", R = R, boot = TRUE
-)[
-  , method := "PT"
-]
-
-
-# Penman Monteith
-params <- c("delta", "gamma", "A", "t", "w", "v")
-# Define matrix
-mat <- sobol_matrices(N = N, params = params)
-mat[, "delta"] <- qunif(mat[, "delta"], 0.21 + 0.21 * -0.005, 0.21 + 0.21 * 0.005)
-mat[, "gamma"] <- qunif(mat[, "gamma"], 0.059 + 0.059 * -0.001, 0.059 + 0.059 * 0.001)
-mat[, "A"] <- qunif(mat[, "A"], 350 + 350 * -0.15, 350 + 350 * 0.15)
-mat[, "t"] <- qunif(mat[, "t"], 27 + 27 * -0.01, 27 + 27 * 0.01)
-mat[, "w"] <- qunif(mat[, "w"], 2.5 + 2.5 * -0.05, 2.5 + 2.5 * 0.05)
-mat[, "v"] <- qunif(mat[, "v"], 2.49 + 2.49 * -0.04, 2.49 + 2.49 * 0.04)
-
-# Run model
-y.pm <- pm_fun(
-  delta = mat[, "delta"],
-  A = mat[, "A"],
-  gamma = mat[, "gamma"],
-  t = mat[, "t"],
-  w = mat[, "w"],
-  v = mat[, "v"]
-)
-
-# Compute Sobol' indices
-params.pm <- c("$\\Delta$", "$\\gamma$", "$A$", "$t$", "$w$", "$v$")
-ind.pm <- sobol_indices(
-  Y = y.pm, N = N, params = params.pm,
-  first = "jansen", R = R, boot = TRUE
-)[
-  , method := "PM"
-]
-
-# Plot results
-# ----------------------------------------------------
-
-dt.pt <- data.table(y.pt)[, method := "PT"] %>%
-  setnames(., "y.pt", "value")
-dt.pm <- data.table(y.pm)[, method := "PM"] %>%
-  setnames(., "y.pm", "value")
-
-# Uncertainty
-a1 <- rbind(dt.pt, dt.pm) %>%
-  ggplot(., aes(value, fill = method)) +
-  geom_histogram(alpha = 0.3, color = "black") +
-  scale_fill_manual(
-    name = "Method",
-    values = wes_palette(n = 2, name = "Chevalier1")
-  ) +
-  labs(x = "$ET_0$ (mm d$^{-1}$)", y = "Counts") +
-  theme_AP() +
-  theme(legend.position = "none")
-
-# Sobol' indices
-b1 <- rbind(ind.pt, ind.pm) %>%
-  .[, parameters := factor(parameters, levels = c(
-    "$\\Delta$", "$\\gamma$",
-    "$A$", "$t$", "$w$", "$v$", "$\\alpha$"
-  ))] %>%
-  plot_sobol(.) +
-  theme(legend.position = "none") +
-  facet_grid(~method,
-    scales = "free_x",
-    space = "free_x"
-  )
-
-top <- plot_grid(a1, b1, ncol = 2, labels = "auto")
-
-# ASSESS ET_C
-# -------------------------------------------------------
-
-# Priestley Taylor
-params <- c("alpha", "delta", "gamma", "A", "k_c")
-
-# Define matrix
-mat <- sobol_matrices(N = N, params = params)
-mat[, "alpha"] <- qunif(mat[, "alpha"], 1.26 + 1.26 * -0.1, 1.26 + 1.26 * 0.1)
-mat[, "delta"] <- qunif(mat[, "delta"], 0.21 + 0.21 * -0.005, 0.21 + 0.21 * 0.005)
-mat[, "gamma"] <- qunif(mat[, "gamma"], 0.059 + 0.059 * -0.001, 0.059 + 0.059 * 0.001)
-mat[, "A"] <- qunif(mat[, "A"], 350 + 350 * -0.15, 350 + 350 * 0.15)
-mat[, "k_c"] <- qunif(mat[, "k_c"], min(cedar.min.max$y), max(cedar.min.max$y))
-
-
-# Run model
-y.pt <- pt_fun(
-  alpha = mat[, "alpha"],
-  delta = mat[, "delta"],
-  gamma = mat[, "gamma"],
-  A = mat[, "A"],
-  k_c = mat[, "k_c"]
-)
-
-# Compute Sobol' indices
-params.pt <- c("$\\alpha$", "$\\Delta$", "$\\gamma$", "$A$", "$k_c$")
-ind.pt <- sobol_indices(
-  Y = y.pt, N = N, params = params.pt,
-  first = "jansen", R = R, boot = TRUE
-)[
-  , method := "PT"
-]
-
-# Penman Monteith
-params <- c("delta", "gamma", "A", "t", "w", "v", "k_c")
-
-# Define matrix
-mat <- sobol_matrices(N = N, params = params)
-mat[, "delta"] <- qunif(mat[, "delta"], 0.21 + 0.21 * -0.005, 0.21 + 0.21 * 0.005)
-mat[, "gamma"] <- qunif(mat[, "gamma"], 0.059 + 0.059 * -0.001, 0.059 + 0.059 * 0.001)
-mat[, "A"] <- qunif(mat[, "A"], 350 + 350 * -0.15, 350 + 350 * 0.15)
-mat[, "t"] <- qunif(mat[, "t"], 27 + 27 * -0.01, 27 + 27 * 0.01)
-mat[, "w"] <- qunif(mat[, "w"], 2.5 + 2.5 * -0.05, 2.5 + 2.5 * 0.05)
-mat[, "v"] <- qunif(mat[, "v"], 2.49 + 2.49 * -0.04, 2.49 + 2.49 * 0.04)
-mat[, "k_c"] <- qunif(mat[, "k_c"], min(cedar.min.max$y), max(cedar.min.max$y))
-
-# Run model
-y.pm <- pm_fun(
-  delta = mat[, "delta"],
-  A = mat[, "A"],
-  gamma = mat[, "gamma"],
-  t = mat[, "t"],
-  w = mat[, "w"],
-  v = mat[, "v"],
-  k_c = mat[, "k_c"]
-)
-
-# Compute Sobol' indices
-params.pm <- c("$\\Delta$", "$\\gamma$", "$A$", "$t$", "$w$", "$v$", "$k_c$")
-ind.pm <- sobol_indices(
-  Y = y.pm, N = N, params = params.pm,
-  first = "jansen", R = R, boot = TRUE
-)[
-  , method := "PM"
-]
-
-# Plot and merge
-# ------------------------------------------------------
-
-dt.pt <- data.table(y.pt)[, method := "PT"] %>%
-  setnames(., "y.pt", "value")
-dt.pm <- data.table(y.pm)[, method := "PM"] %>%
-  setnames(., "y.pm", "value")
-
-# Uncertainty
-c <- rbind(dt.pt, dt.pm) %>%
-  ggplot(., aes(value, fill = method)) +
-  geom_histogram(alpha = 0.3, color = "black", position = "identity") +
-  scale_fill_manual(
-    name = "Method",
-    values = wes_palette(n = 2, name = "Chevalier1")
-  ) +
-  labs(x = "$ET_c$ (mm d$^{-1}$)", y = "Counts") +
-  theme_AP() +
-  theme(legend.position = "none")
-
-# Sobol' indices
-d <- rbind(ind.pt, ind.pm) %>%
-  .[, parameters := factor(parameters, levels = c(
-    "$\\Delta$", "$\\gamma$",
-    "$A$", "$t$", "$w$", "$v$", "$\\alpha$", "$k_c$"
-  ))] %>%
-  plot_sobol(.) +
-  theme(legend.position = "none") +
-  facet_grid(~method,
-    scales = "free_x",
-    space = "free_x"
-  )
+plots.ind <- lapply(list(ind, ind.kc), function(x) extract_sobol(data = x))
 ```
 
-```{r plot, cache=TRUE, dependson="calculations", fig.height=4.8, fig.width=5.}
+```{r plot, cache=TRUE, dependson="calculations", fig.height=4.8, fig.width=5, message=FALSE, warning=FALSE, fig.cap="Monte-Carlo based, global uncertainty and sensitivity analysis of the Penman-Monteith (PM) and the Priestley-Taylor (PT) methods. The red bar indicates the first-order effect $S_i$, i.e. the proportion of variance conveyed by each model input. The blue bar reflects the total-order effect $T_i$, which includes the first-order effect of the parameter plus the effect derived of its interaction with the rest. The parameters were described with the probability distributions shown in Table~1. See the Supplementary Materials for a technical explanation of global uncertainty and sensitivity analysis. a) Empirical distribution of $ET_0$. b) Sobol' indices. c) Empirical distribution of $ET_c$. We described $k_c$ as $U(0.47, 1.86)$ to reproduce the range reported at month 5 by @Nichols2004 for developing salt cedars in the Bosque del Apache, New Mexico (see Figure~3a). d) Sobol' indices."}
 
-bottom <- plot_grid(c, d, ncol = 2, labels = c("c", "d"))
-all_plot <- plot_grid(top, bottom, ncol = 1)
-legend_ua <- cowplot::get_legend(a1 + theme(legend.position = "top"))
-legend_sa <- cowplot::get_legend(b1 + theme(legend.position = "top"))
+# MERGE ALL PLOTS ----------------------------------------------------------------
+
+# Arrange legend
+legend_ua <- cowplot::get_legend(plots.unc[[1]] + theme(legend.position = "top"))
+legend_sa <- cowplot::get_legend(plots.ind[[1]] + theme(legend.position = "top"))
 all_legend <- plot_grid(legend_ua, legend_sa, ncol = 2, rel_heights = c(0.01, 0.01))
+
+# Arrange plots
+top <- plot_grid(plots.unc[[1]], plots.ind[[1]], ncol = 2, labels = c("a", "b"))
+bottom <- plot_grid(plots.unc[[2]], plots.ind[[2]], ncol = 2, labels = c("c", "d"))
+all_plot <- plot_grid(top, bottom, ncol = 1)
+
+# Merge
 plot_grid(all_legend, all_plot, ncol = 1, rel_heights = c(0.1, 0.9))
 ```
 
+# Irrigation efficiency ($E_p$)
+Here we study the uncertainty ranges of the different empirical datasets used by @Doll2002 and @Rohwer2007 to produce their $E_p$ estimates. 
 
+* The `usa_efficiency.csv` dataset includes the data presented in Table 16 of @Solley1998.
+* The `fao_1997.csv` dataset includes the data in Table 8, Figure 10 and Figure 11 of @FAO1997.
+* The `bos.dt.csv` includes all the data in @Bos1990.
 
-```{r distributions_kc, cache=TRUE, dependson="plot_kc", fig.height=2.3, fig.width=4}
-#
-a <- kc_evolution_point[x < 6] %>%
-  ggplot(., aes(y)) +
-  geom_histogram() +
-  labs(x = "$k_c$", y = "Counts") +
-  theme_AP()
+We first plot the data to illustrate the uncertainty ranges. 
 
-v <- EnvStats::rlnormTrunc(10^4, meanlog = 0.1, sdlog = 15, min = 0.3, max = 1.85)
-b <- ggplot(data.table(v), aes(v)) +
-  geom_histogram() +
-  labs(x = "$k_c$", y = "") +
-  theme_AP()
+```{r efficiencies_usa_africa, cache=TRUE, fig.height=5, fig.width=4.2, message=FALSE, warning=FALSE, fig.cap="Data on irrigation efficiency. a) Distribution of project efficiencies ($E_p$) in USA according to @Solley1998, calculated as Total water withdrawal / consumptive water use. The vertical  dashed line is the $E_p$ value used by @Doll2002 to characterize the irrigation efficiency of USA. b) Distribution of project efficiencies ($E_p$) for Africa reported by @FAO1997. c) Distribution of field application efficiencies ($E_a$) in surface and sprinkler irrigation systems according to @Bos1990. ``Surface`` includes furrow, basin and border irrigation systems. The dashed vertical lines mark the $E_a$ point estimates selected by @Rohwer2007. d) Distribution of conveyance efficiencies ($E_c$) in surface and pressurized (sprinkler) irrigation systems according to @Bos1990. The vertical, dashed black lines show the $E_c$ point estimates used by @Rohwer2007."}
 
-cowplot::plot_grid(a, b, ncol = 2, labels = "auto")
-```
-
-
-
-
-```{r calculations_k_c}
-
-# UNCERTAINTY IN E_C (K_C * ET_0)
-
-pt_fun <- function(alpha, delta, gamma, A, k_c) {
-  out <- k_c * (alpha * ((delta * A) / (gamma + delta)))
-  return(out)
-}
-
-# Define settings
-N <- 2^12
-params <- c("alpha", "delta", "gamma", "A", "k_c")
-R <- 10^3
-
-# Define matrix
-mat <- sobol_matrices(N = N, params = params)
-mat[, "alpha"] <- qunif(mat[, "alpha"], 1.26 + 1.26 * -0.1, 1.26 + 1.26 * 0.1)
-mat[, "delta"] <- qunif(mat[, "delta"], 0.21 + 0.21 * -0.005, 0.21 + 0.21 * 0.005)
-mat[, "gamma"] <- qunif(mat[, "gamma"], 0.059 + 0.059 * -0.001, 0.059 + 0.059 * 0.001)
-mat[, "A"] <- qunif(mat[, "A"], 350 + 350 * -0.15, 350 + 350 * 0.15)
-mat[, "k_c"] <- EnvStats::qlnormTrunc(mat[, "k_c"],
-  meanlog = 0.1, sdlog = 15, min = 0.3, max = 1.85
-)
-
-
-# Run model
-y.pt <- pt_fun(
-  alpha = mat[, "alpha"],
-  delta = mat[, "delta"],
-  gamma = mat[, "gamma"],
-  A = mat[, "A"],
-  k_c = mat[, "k_c"]
-)
-
-# Compute Sobol' indices
-params.pt <- c("$\\alpha$", "$\\Delta$", "$\\gamma$", "$A$", "$k_c$")
-ind.pt <- sobol_indices(
-  Y = y.pt, N = N, params = params.pt,
-  first = "jansen", R = R, boot = TRUE
-)[
-  , method := "Priestley-Taylor"
-]
-
-
-# UA / SA OF THE FAO 56 PENMAN-MONTEITH
-###############################################
-
-pm_fun <- function(delta, A, gamma, t, w, v, k_c) {
-  out <- k_c * ((0.408 * delta * A + gamma * (900 / (t + 273)) * w * v) /
-    delta + gamma * (1 + 0.34 * w))
-  return(out)
-}
-
-params <- c("delta", "gamma", "A", "t", "w", "v", "k_c")
-R <- 10^3
-
-# Define matrix
-mat <- sobol_matrices(N = N, params = params)
-mat[, "delta"] <- qunif(mat[, "delta"], 0.21 + 0.21 * -0.005, 0.21 + 0.21 * 0.005)
-mat[, "gamma"] <- qunif(mat[, "gamma"], 0.059 + 0.059 * -0.001, 0.059 + 0.059 * 0.001)
-mat[, "A"] <- qunif(mat[, "A"], 350 + 350 * -0.15, 350 + 350 * 0.15)
-mat[, "t"] <- qunif(mat[, "t"], 27 + 27 * -0.01, 27 + 27 * 0.01)
-mat[, "w"] <- qunif(mat[, "w"], 2.5 + 2.5 * -0.05, 2.5 + 2.5 * 0.05)
-mat[, "v"] <- qunif(mat[, "v"], 2.49 + 2.49 * -0.04, 2.49 + 2.49 * 0.04)
-mat[, "k_c"] <- EnvStats::qlnormTrunc(mat[, "k_c"],
-  meanlog = 0.1, sdlog = 15, min = 0.3, max = 1.85
-)
-
-# Run model
-y.pm <- pm_fun(
-  delta = mat[, "delta"],
-  A = mat[, "A"],
-  gamma = mat[, "gamma"],
-  t = mat[, "t"],
-  w = mat[, "w"],
-  v = mat[, "v"],
-  k_c = mat[, "k_c"]
-)
-
-# Compute Sobol' indices
-params.pm <- c("$\\Delta$", "$\\gamma$", "$A$", "$t$", "$w$", "$v$", "$k_c$")
-ind.pm <- sobol_indices(
-  Y = y.pm, N = N, params = params.pm,
-  first = "jansen", R = R, boot = TRUE
-)[
-  , method := "Penman-Monteith"
-]
-```
-
-```{r plot_ET0kc, cache=TRUE, dependson="calculations_k_c", fig.height=2.8, fig.width=5.5}
-
-dt.pt <- data.table(y.pt)[, method := "Priestley-Taylor"] %>%
-  setnames(., "y.pt", "value")
-dt.pm <- data.table(y.pm)[, method := "Penman-Monteith"] %>%
-  setnames(., "y.pm", "value")
-
-# Uncertainty
-a <- rbind(dt.pt, dt.pm) %>%
-  ggplot(., aes(value, fill = method)) +
-  geom_histogram(alpha = 0.3, color = "black", position = "identity") +
-  scale_fill_manual(
-    name = "Method",
-    values = wes_palette(n = 2, name = "Chevalier1")
-  ) +
-  labs(x = "$ET_c$", y = "Counts") +
-  theme_AP() +
-  theme(legend.position = c(0.6, 0.7))
-
-# Sobol' indices
-b <- rbind(ind.pt, ind.pm) %>%
-  .[, parameters := factor(parameters, levels = c(
-    "$\\Delta$", "$\\gamma$",
-    "$A$", "$t$", "$w$", "$v$", "$\\alpha$", "$k_c$"
-  ))] %>%
-  plot_sobol(.) +
-  theme(legend.position = "none") +
-  facet_grid(~method,
-    scales = "free_x",
-    space = "free_x"
-  )
-
-legend <- cowplot::get_legend(b + theme(legend.position = "top"))
-bottom <- cowplot::plot_grid(a, b, ncol = 2, labels = "auto", rel_widths = c(0.45, 0.55))
-cowplot::plot_grid(legend, bottom, ncol = 1, rel_heights = c(0.2, 0.8))
-```
-
-# Efficiencies
-
-```{r efficiencies_usa_africa, cache=TRUE, fig.height=5, fig.width=4.2}
-
-# PLOT EFFICIENCIES ----------------------------------------------------------------
+# PLOT EFFICIENCIES --------------------------------------------------------------
 
 # USA data
 usa.dt <- fread("usa_efficiency.csv")
@@ -555,7 +518,7 @@ bottom <- cowplot::plot_grid(c, d, ncol = 1, labels = c("c", "d"))
 cowplot::plot_grid(top, bottom, ncol = 1, rel_heights = c(0.35, 0.65))
 ```
 
-```{r efficiencies_scale, cache=TRUE, dependson="efficiencies_usa_africa", fig.height=3, fig.width=4.2}
+```{r efficiencies_scale, cache=TRUE, dependson="efficiencies_usa_africa", fig.height=3, fig.width=4.2, fig.cap = "Partial efficiencies as a function of scale according to the data compiled by @Bos1990. $E_d$ stands for distribution efficiency and refers to the water delivery from the source to a specific outlet. $E_d$ is replaced by @Rohwer2007 with $M_f$."}
 
 # EFFICIENCIES AS A FUNCTION OF SCALE ----------------------------------------------
 
@@ -572,7 +535,16 @@ melt(dt.tmp, measure.vars = c("$E_c$", "$E_a$", "$E_d$")) %>%
   theme_AP()
 ```
 
-# Uncertainty of Rohwer factorial design
+## Rohwer et al. 's factorial design
+Here we conduct an uncertainty and sensitivity analysis of @Rohwer2007 approach to $E_p$, which is the following: 
+
+\begin{equation}
+E_p=E_a E_c M_f\,,
+\label{eq:partial_efficiencies}
+\end{equation}
+%
+where $E_a$ is the field application efficiency, $E_c$ the conveyance efficiency and $M_f$ a management factor. $E_a$ and $E_c$ are defined by the irrigation technology and $M_f$ by the size of the irrigation system. We first define the size of base sample matrix ($N=2^{14}$) and the number of bootstrap replicas of the Sobol' indices ($R=10^3$), and transform each model input to its appropriate probability distributions. We then compare the modeled with the empirical distributions and create a plot where we show that $E_p,E_a,M_f$ are not correlated.
+
 
 ```{r settings_factorial, cache=TRUE}
 
@@ -593,7 +565,7 @@ mat <- sobol_matrices(N = N, params = params, type = "R")
 shape <- 3.502469
 scale <- 0.5444373
 minimum <- 0.14
-maximum <- 0.75
+maximum <- 0.87
 Fa.weibull <- pweibull(minimum, shape = shape, scale = scale)
 Fb.weibull <- pweibull(maximum, shape = shape, scale = scale)
 mat[, "E_a"] <- qunif(mat[, "E_a"], Fa.weibull, Fb.weibull)
@@ -602,7 +574,7 @@ mat[, "E_a"] <- qweibull(mat[, "E_a"], shape, scale)
 # Truncated Beta for E_c
 shape1 <- 5.759496
 shape2 <- 1.403552
-minimum <- 0.5
+minimum <- 0.26
 maximum <- 0.98
 Fa.beta <- pbeta(minimum, shape1 = shape1, shape2 = shape2)
 Fb.beta <- pbeta(maximum, shape1 = shape1, shape2 = shape2)
@@ -620,24 +592,67 @@ mat[, "M_f"] <- qunif(mat[, "M_f"], Fa.weibull, Fb.weibull)
 mat[, "M_f"] <- qweibull(mat[, "M_f"], shape, scale)
 ```
 
-```{r distributions_factorial, cache=TRUE, dependson="matrix_factorial", fig.height=2, fig.width=4.2}
+```{r distributions_factorial, cache=TRUE, dependson="matrix_factorial", fig.height=3,fig.width=4, fig.cap="Empirical and modeled distributions for the uncertainty and sensitivity analysis of Equation 5."}
 
 # PLOT DISTRIBUTIONS ---------------------------------------------------------------
 
 dt <- data.table(mat)
 params_plot <- paste("$", params, "$", sep = "")
-dt <- setnames(dt, params, params_plot)
-dt[1:N] %>%
+dt <- setnames(dt, params, params_plot) %>%
+  .[, Data:= "Modeled"]
+
+# Filter empirical datasets
+dt.ea <- bos.dt[Type == "Surface", `$E_a$`]
+dt.ec <- bos.dt[Type == "Surface", `$E_c$`]
+dt.mf <- bos.dt[Irrigated_area < 10000, `$E_d$`]
+
+n <- max(length(dt.ea), length(dt.ec), length(dt.mf))
+
+length(dt.ea) <- n
+length(dt.ec) <- n
+length(dt.mf) <- n
+
+dt.empirical <- cbind(dt.ea, dt.ec, dt.mf) %>%
+  data.table() %>%
+  .[, Data:= "Empirical"] %>%
+  setnames(., colnames(.), colnames(dt))
+
+rbind(dt.empirical, dt[1:N]) %>%
   melt(., measure.vars = params_plot) %>%
   ggplot(., aes(value)) +
   geom_histogram() +
   labs(x = "Value", y = "Counts") +
   scale_x_continuous(breaks = pretty_breaks(n = 4)) +
-  facet_wrap(~variable, scales = "free_x") +
+  facet_grid(Data ~ variable, scales = "free_y") +
   theme_AP()
 ```
 
-```{r model_factorial, cache=TRUE, dependson="matrix_factorial", fig.height=2.8, fig.width=2.8}
+```{r check_corr, cache=TRUE, dependson=c("distributions_factorial"), fig.height=2, fig.width=4, fig.cap="Scatterplots of $E_a,E_c,M_f$. The topmost and bottomost label facets refer to the $x$ and the $y$ axis respectively."}
+
+# PLOT SCATTERPLOTS TO CHECK FOR CORRELATION BETWEEN E_A, E_C, M_F ---------------
+
+out <- t(combn(colnames(dt.empirical)[1:3], 2))
+da <- list()
+
+for (i in 1:nrow(out)) {
+  cols <- out[i, ]
+  da[[i]] <- cbind(dt.empirical[, ..cols], cols[1], cols[2])
+  data.table::setnames(da[[i]], colnames(da[[i]]), c("xvar",
+                                                     "yvar", "x", "y"))
+}
+
+output <- data.table::rbindlist(da)
+
+ggplot(output, aes(xvar, yvar)) +
+  geom_point() +
+  facet_wrap(x ~ y) +
+  labs(x = "$x$", y = "$y$") +
+  theme_AP()
+```
+
+In the next code snippet we run Equation~\ref{eq:partial_efficiencies} and compute some statistics on the model output.
+
+```{r model_factorial, cache=TRUE, dependson="matrix_factorial", fig.height=4, fig.width=4}
 
 # DEFINE MODEL ---------------------------------------------------------------------
 
@@ -649,6 +664,8 @@ data.table(y)[, .(min = min(y), max = max(y))]
 quantile(y, probs = c(0.025, 0.975))
 ```
 
+Here we plot the empirical distribution of $E_p$:
+
 ```{r uncertainty_factorial, cache=TRUE, dependson="model_factorial"}
 
 # PLOT UNCERTAINTY -----------------------------------------------------------------
@@ -659,6 +676,7 @@ a <- plot_uncertainty(Y = y, N = N) +
 a
 ```
 
+And compute the Sobol' indices below.
 
 ```{r sensitivity_factorial, cache=TRUE, dependson="model_factorial", fig.height=2.8, fig.width=2.8}
 
@@ -673,7 +691,7 @@ b <- plot_sobol(ind) +
 b
 ```
 
-```{r full_sensitivity_factorial, cache=TRUE, dependson=c("model_factorial", "sensitivity_factorial"), fig.height=2.7, fig.width=5.5}
+```{r full_sensitivity_factorial, cache=TRUE, dependson=c("model_factorial", "sensitivity_factorial"), fig.height=2.3, fig.width=5.5}
 
 # MERGE PLOTS ----------------------------------------------------------------------
 
@@ -682,65 +700,24 @@ bottom <- cowplot::plot_grid(a, b, ncol = 2, labels = "auto")
 cowplot::plot_grid(legend, bottom, ncol = 1, rel_heights = c(0.15, 0.85))
 ```
 
-# Irrigated areas
+# Assessment of uncertainties 
 
-```{r irrigated_areas, cache=TRUE}
+## OAT's perfunctory exploration of the uncertainty space
 
-# PLOT UNCERTAINTY IN IRRIGATED AREAS ----------------------------------------------
+In the code snippet below we prove that OAT perfunctorily explores the uncertainty space using the general formula for the volume of the hypersphere of radius 1/2 in $k$ dimensions, as in @Saltelli2010b. The formula reads as follows:
 
-# Read data compiled by Meier
-irrigated.areas <- fread("meier.csv")
+\begin{equation}
+r(k) = \frac{\pi ^ {\frac{k}{2}}}{\Gamma \left ( \frac{k}{2} + 1 \right ) }\left ( \frac{1}{2} \right ) ^k
+\end{equation}
 
-# Arrange and drop Oceania and 0's
-dt <- melt(irrigated.areas, measure.vars = 4:9) %>%
-  .[!Continent == "Oceania"] %>%
-  .[!value == 0]
-
-# List to plot
-continent_list <- list(c("Africa", "Americas"), c("Asia", "Europe"))
-
-# Plot
-gg <- list()
-for (i in 1:length(continent_list)) {
-  gg[[i]] <- ggplot(dt[Continent %in% continent_list[[i]]], aes(reorder(Country, value), value)) +
-    geom_point(stat = "identity", aes(color = variable)) +
-    scale_y_log10(
-      breaks = trans_breaks("log10", function(x) 10^x),
-      labels = trans_format("log10", math_format(10^.x))
-    ) +
-    coord_flip() +
-    scale_color_manual(
-      name = "Dataset",
-      values = c(
-        "yellowgreen", "seagreen4", "magenta3",
-        "sienna3", "turquoise2", "khaki3"
-      )
-    ) +
-    labs(
-      x = "",
-      y = "Irrigated area (ha)"
-    ) +
-    facet_wrap(~Continent, scales = "free_y") +
-    theme_AP()
-}
-```
-
-```{r plot_irrigated_areas, cache=TRUE, dependson="irrigated_areas", fig.height=6.5, fig.width=5.7}
-gg[[1]]
-```
-
-```{r plot_irrigated_areas2, cache=TRUE, dependson="irrigated_areas", fig.height=6.5, fig.width=5.7}
-gg[[2]]
-```
-
-# Ratio of sphere to hypercube
+We check the fraction explored for $\textbf{k}=1,2,\cdots,20$
 
 ```{r oat_exploration, cache=TRUE, fig.height=2, fig.width=2.2}
 
 # ASSESS THE FRACTION OF THE UNCERTAIN SPACE EXAMINED BY OAT -----------------------
 
 # Formula: Ratio of the hypercube to the hypersphere
-oat_exploration <- function(x) pi^((x) / 2) * (0.5)^(x) / gamma(1 + x / 2)
+oat_exploration <- function(k) pi^((k) / 2) * (0.5)^(k) / gamma(1 + k / 2)
 
 # Check from 1 to 20 dimensions
 out <- sapply(1:20, function(x) oat_exploration(x))
@@ -775,7 +752,7 @@ data.table(k = 1:20, x = out) %>%
   )
 ```
 
-# Assesment of the entire uncertain space
+## Assesment of uncertainties at the grid cell level
 
 ## Uncertainty in the extension of irrigated areas in Texas
 
@@ -920,7 +897,7 @@ kc_wheat <- fread("kc_wheat_new.csv")
 
 # Define the time frame of the data
 min.day <- 50
-max.day <- 60
+max.day <- 53
 
 # Retrieve the filtered data
 kc_wheat.dt <- kc_wheat[x > min.day & x < max.day][y > 0]
@@ -936,7 +913,7 @@ v.final <- runif(10^4, min = min(kc_wheat.dt$y), max = max(kc_wheat.dt$y))
 a <- ggplot(kc_wheat, aes(x = x, y = y)) +
   annotate("rect",
     xmin = min.day, xmax = max.day,
-    ymin = 0, ymax = Inf, alpha = 0.1, fill = "red"
+    ymin = 0, ymax = Inf, fill = "red"
   ) +
   geom_point(size = 0.6) +
   geom_smooth() +
@@ -945,18 +922,63 @@ a <- ggplot(kc_wheat, aes(x = x, y = y)) +
 
 b <- ggplot(kc_wheat.dt, aes(y)) +
   geom_histogram() +
+  scale_x_continuous(breaks = pretty_breaks(n = 3)) +
   labs(x = "$k_c$", y = "Counts") +
   theme_AP()
 
 c <- ggplot(data.table(v.final), aes(v.final)) +
   geom_histogram() +
   labs(x = "$k_c$", y = "Counts") +
+  scale_x_continuous(breaks = pretty_breaks(n = 3)) +
   theme_AP()
 
 plot_grid(a, b, c, ncol = 3, labels = "auto")
 ```
 
 ## Uncertainty and sensitivity analysis
+
+```{r climate_uvalde, cache=TRUE}
+
+# READ IN CLIMATIC DATA FOR UVALDE FOR JANUARY 2007-------------------------------
+
+da <- fread("uvalde_climate_data_january.csv")
+
+# Turn columns into numeric
+col_names <- colnames(da)
+da[, (col_names):= lapply(.SD, as.numeric), .SDcols = (col_names)]
+
+# Convert Fahrenheit to Celsius
+temp_cols <- colnames(da)[da[ , grepl( "Temp", colnames(da))]]
+da[, (temp_cols):= lapply(.SD, function(x) (x - 32) / 1.8), .SDcols = (temp_cols)]
+
+# Convert miles per hour to meters per second
+wind_cols <- colnames(da)[da[ , grepl( "Wind", colnames(da))]]
+da[, (wind_cols):= lapply(.SD, function(x) x / 2.237), .SDcols = (wind_cols)]
+
+# Select days of interest
+uvalde_days <- da[Day >= 6 & Day <= 7]
+
+# Mean temperature
+T_air <- mean(uvalde_days$`Temp.Avg`)
+T_air
+
+# Computation of Vapour pressure (Delta)
+# T_air <- 27
+e_sat <- 0.6108 * exp((17.27 * T_air) / (T_air + 237.3))
+Delta <- (4098 * e_sat) / ((T_air + 237.3) ^ 2)
+Delta
+
+# Computation of vapour deficit (v)
+rel_hum <- mean(uvalde_days$`Hum.Avg`) / 100
+v <- e_sat - (e_sat * rel_hum)
+
+# Computation of Psychrometric constant (gamma)
+z <- 9.1
+lambda <- 2.501 - 0.002361 * T_air
+P <- 101.3 * ((293 - 0.0065 * z) / 293) ^ 5.256
+Gamma <- 0.0016286 * P / lambda
+Gamma
+```
 
 ```{r settings_full, cache=TRUE}
 
@@ -967,13 +989,13 @@ R <- 10^3
 type <- "R"
 order <- "second"
 params <- c(
-  "I_a", "delta", "gamma", "A", "t", "w", "v",
+  "I_a", "Delta", "gamma", "A", "T_a", "w", "v",
   "k_c", "P", "E_a", "E_c", "M_f"
 )
 
 # Vector with the name of the parameters modified for better plotting
 params.plot <- c(
-  "$I_a$", "$\\delta$", "$\\gamma$", "$A$", "$t$", "$w$",
+  "$I_a$", "$\\Delta$", "$\\gamma$", "$A$", "$T_a$", "$w$",
   "$v$", "$k_c$", "$P$", "$E_a$", "$E_c$", "$M_f$"
 )
 
@@ -982,7 +1004,7 @@ params.plot <- c(
 # ET_0 (mm)
 ```
 
-```{r sample_matrix_full, cache=TRUE, dependson=c("kc_wheat", "settings_full", "modify_rasters")}
+```{r sample_matrix_full, cache=TRUE, dependson=c("kc_wheat", "settings_full", "modify_rasters", "climate_uvalde")}
 
 # DEFINE SAMPLE MATRIX AND TRANSFORM TO APPROPRIATE DISTRIBUTIONS -----------------
 
@@ -991,35 +1013,19 @@ mat <- sobol_matrices(N = N, params = params, order = order, type = type)
 
 # Transform to appropriate probability distributions
 mat[, "I_a"] <- qunif(mat[, "I_a"], rasters.uvalde[, min(area)], rasters.uvalde[, max(area)])
-mat[, "delta"] <- qunif(mat[, "delta"], 0.21 + 0.21 * -0.005, 0.21 + 0.21 * 0.005)
-mat[, "gamma"] <- qunif(mat[, "gamma"], 0.059 + 0.059 * -0.001, 0.059 + 0.059 * 0.001)
+mat[, "Delta"] <- qunif(mat[, "Delta"], Delta + Delta * -0.005, Delta + Delta * 0.005)
+mat[, "gamma"] <- qunif(mat[, "gamma"], Gamma + Gamma * -0.001, Gamma + Gamma * 0.001)
 mat[, "A"] <- qunif(mat[, "A"], 350 + 350 * -0.15, 350 + 350 * 0.15)
-mat[, "t"] <- qunif(mat[, "t"], 27 + 27 * -0.01, 27 + 27 * 0.01)
-mat[, "w"] <- qunif(mat[, "w"], 2.5 + 2.5 * -0.05, 2.5 + 2.5 * 0.05)
-mat[, "v"] <- qunif(mat[, "v"], 2.49 + 2.49 * -0.04, 2.49 + 2.49 * 0.04)
-mat[, "P"] <- qunif(mat[, "P"], 300, 600)
+mat[, "T_a"] <- qunif(mat[, "T_a"], T_air + T_air * -0.01, T_air + T_air * 0.01)
+mat[, "w"] <- qunif(mat[, "w"], 2.81 + 2.81 * -0.05, 2.81 + 2.81 * 0.05)
+mat[, "v"] <- qunif(mat[, "v"], v + v * -0.04, v + v * 0.04)
+mat[, "P"] <- qunif(mat[, "P"], 0, 0.1)
 mat[, "M_f"] <- qunif(mat[, "M_f"], 0.5, 0.97)
 mat[, "k_c"] <- qunif(mat[, "k_c"], min(kc_wheat.dt$y), max(kc_wheat.dt$y))
-
-# Truncated weibull for E_a
-shape.weibull <- 3.659042
-scale.weibull <- 0.590995
-minimum <- 0.14
-maximum <- 0.88
-Fa.weibull <- pweibull(minimum, shape = shape.weibull, scale = scale.weibull)
-Fb.weibull <- pweibull(maximum, shape = shape.weibull, scale = scale.weibull)
-mat[, "E_a"] <- qunif(mat[, "E_a"], Fa.weibull, Fb.weibull)
-mat[, "E_a"] <- qbeta(mat[, "E_a"], shape.weibull, scale.weibull)
-
-# Truncated beta for E_c
-shape1 <- 5.974774
-shape2 <- 1.712115
-minimum <- 0.26
-maximum <- 0.98
-Fa.beta <- pbeta(minimum, shape1 = shape1, shape2 = shape2)
-Fb.beta <- pbeta(maximum, shape1 = shape1, shape2 = shape2)
-mat[, "E_c"] <- qunif(mat[, "E_c"], Fa.beta, Fb.beta)
-mat[, "E_c"] <- qbeta(mat[, "E_c"], shape1, shape2)
+mat[, "E_a"] <- qunif(mat[, "E_a"], min(bos.dt[Type == "Sprinkler", `$E_a$`], na.rm = TRUE),
+                      max(bos.dt[Type == "Sprinkler", `$E_a$`], na.rm = TRUE))
+mat[, "E_c"] <- qunif(mat[, "E_c"], min(bos.dt[Type == "Sprinkler", `$E_c$`], na.rm = TRUE),
+                      max(bos.dt[Type == "Sprinkler", `$E_c$`], na.rm = TRUE))
 ```
 
 ```{r plot_sample_matrix, cache=TRUE, dependson="sample_matrix_full", fig.height=6, fig.width=5.5}
@@ -1041,9 +1047,9 @@ data.table(mat[1:N, ]) %>%
 
 # DEFINE THE MODEL -----------------------------------------------------------
 
-full_model <- function(I_a, delta, A, gamma, t, w, v, k_c, P, E_a, E_c, M_f) {
-  out <- (I_a * (k_c * ((0.408 * delta * A + gamma * (900 / (t + 273)) * w * v) /
-    delta + gamma * (1 + 0.34 * w))) - P) / (E_a * E_c * M_f)
+full_model <- function(I_a, Delta, A, gamma, T_a, w, v, k_c, P, E_a, E_c, M_f) {
+  out <- (I_a * (k_c * ((0.408 * Delta * A + gamma * (900 / (T_a + 273)) * w * v) /
+    Delta + gamma * (1 + 0.34 * w))) - P) / (E_a * E_c * M_f)
   return(out)
 }
 ```
@@ -1054,10 +1060,10 @@ full_model <- function(I_a, delta, A, gamma, t, w, v, k_c, P, E_a, E_c, M_f) {
 
 y <- full_model(
   I_a = mat[, "I_a"],
-  delta = mat[, "delta"],
+  Delta = mat[, "Delta"],
   A = mat[, "A"],
   gamma = mat[, "gamma"],
-  t = mat[, "t"],
+  T_a = mat[, "T_a"],
   w = mat[, "w"],
   v = mat[, "v"],
   k_c = mat[, "k_c"],
@@ -1132,10 +1138,10 @@ colnames(mat.oat) <- params
 
 y.oat <- full_model(
   I_a = mat.oat[, "I_a"],
-  delta = mat.oat[, "delta"],
+  Delta = mat.oat[, "Delta"],
   A = mat.oat[, "A"],
   gamma = mat.oat[, "gamma"],
-  t = mat.oat[, "t"],
+  T_a = mat.oat[, "T_a"],
   w = mat.oat[, "w"],
   v = mat.oat[, "v"],
   k_c = mat.oat[, "k_c"],
@@ -1154,10 +1160,10 @@ vec_means <- colMeans(A)
 
 y.point <- full_model(
   I_a = vec_means[["I_a"]],
-  delta = vec_means[["delta"]],
+  Delta = vec_means[["Delta"]],
   A = vec_means[["A"]],
   gamma = vec_means[["gamma"]],
-  t = vec_means[["t"]],
+  T_a = vec_means[["T_a"]],
   w = vec_means[["w"]],
   v = vec_means[["v"]],
   k_c = vec_means[["k_c"]],
@@ -1169,7 +1175,6 @@ y.point <- full_model(
 
 y.point
 ```
-
 
 ## Compare OAT and global sensitivity analysis
 

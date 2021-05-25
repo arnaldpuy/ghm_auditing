@@ -4,7 +4,7 @@
 Arnald Puy, Razi Sheikholeslami, Hoshin V. Gupta, Jim W. Hall, Samuele Lo Piano, Jonas Meier, Florian Pappenberger, Amilcare Porporato, Giulia Vico, Andrea Saltelli.
 
 ## Information
-We provide the code in `.R`, `.rmd` and `.pdf` along with a detailed narration of the steps needed to reproduce our ork and the software requirements.
+We provide the code in `.R`, `.rmd` and `.pdf` along with a detailed narration of the steps needed to reproduce our work and the software requirements.
 
 We also provide the Supplementary Materials of the Comment in the file `supplementary_materials.pdf`.
 
@@ -31,15 +31,15 @@ We also provide the Supplementary Materials of the Comment in the file `suppleme
 ## Datasets excluded 
 The following datasets could not be uploaded to GitHub due to size restrictions. Contact Arnald puy (arnald.puy@pm.me) if you wish to have them for a full reproduction of our results.
 
-`meier.map.csv`.
+`meier.map.csv`: from Meier et al. 2018. 
 
-`fap_gmia_asc`.
+`fao_gmia_asc`: from Siebert et al. 2005.
 
-`GRIPC_irrigated_area.asc`.
+`GRIPC_irrigated_area.asc`: from Salmon et al. 2015.
 
-`meier_map.tif`.
+`meier_map.tif`: from Meier et al. 2018.
 
-`iwmi_giam.tif`.
+`iwmi_giam.tif`: from Thenkabail 2009.
 
 ## References 
 
@@ -58,7 +58,14 @@ Meier, J., Zabel, F. & Mauser, W. A global approach to estimate irrigated areas.
 
 Nichols, J., Eichinger, W., Cooper, D. I., Prueger, J. H., Hipps, L. E., Neale, C. M. U. & Bawazir, A. S. Comparison of evaporation estimation methods for a riparian area. Final report tech. rep. 436 (IIHR - Hydroscience & Engineering, College of Engineering, University of Iowa, Iowa City, 2004).
 
+Salmon, J., Friedl, M. A., Frolking, S., Wisser, D. & Douglas, E. M. Global rainfed, irrigated, and paddy croplands: A new high resolution map derived from remote sensing, crop inventories and climate data. International Journal of Applied Earth Observation and Geoinformation 38, 321-334. doi:10.1016/j.jag.2015.01.014
+(2015).
+
+Siebert, S., Doll, P., Hoogeveen, J., Faures, J.-M., Frenken, K. & Feick, S. Development and validation of the global map of irrigation areas. Hydrology and Earth System Sciences 9, 535{547. doi:10.5194/hess-9-535-2005 (Nov. 2005).
+
 Solley, W. B., Pierce, R. R. & Perlman, H. Estimated Use of Water in the United
 States in 1995 tech. rep. (US Geological Survey Circular 1200, 1998), 50.
+
+Thenkabail, P. S., Biradar, C. M., Noojipady, P., Dheeravath, V., Li, Y., Velpuri, M., Gumma, M., Gangalakunta, O. R. P., Turral, H., Cai, X., Vithanage, J., Schull, M. & Dutta, R. Global irrigated area map (GIAM), derived from remote sensing, for the end of the last millennium. International Journal of Remote Sensing 30, 3679-3733. doi:10.1080/01431160802698919 (2009).
 
 

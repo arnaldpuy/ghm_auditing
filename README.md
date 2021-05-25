@@ -1,5 +1,10 @@
 
-# code_ghm_auditing
+# Why global irrigation water withdrawal estimates are dangerously wrong 
 
-This is a work in progress focused on assessing the uncertainties in the computation of irrigation water withdrawals by global hydrological models.
+Arnald Puy, Razi Sheikholeslami, Hoshin V. Gupta, Jim W. Hall, Samuele Lo Piano, Jonas Meier, Florian Pappenberger, Amilcare Porporato, Giulia Vico, Andrea Saltelli.
+
+## Information
+We provide the code in `.R`, `.rmd` and `.pdf` along with a detailed narration of the steps needed to reproduce our ork and the software requirements.
+
+## Datasets included
 

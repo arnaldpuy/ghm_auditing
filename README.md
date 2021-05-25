@@ -61,7 +61,7 @@ Nichols, J., Eichinger, W., Cooper, D. I., Prueger, J. H., Hipps, L. E., Neale, 
 Salmon, J., Friedl, M. A., Frolking, S., Wisser, D. & Douglas, E. M. Global rainfed, irrigated, and paddy croplands: A new high resolution map derived from remote sensing, crop inventories and climate data. International Journal of Applied Earth Observation and Geoinformation 38, 321-334. doi:10.1016/j.jag.2015.01.014
 (2015).
 
-Siebert, S., Doll, P., Hoogeveen, J., Faures, J.-M., Frenken, K. & Feick, S. Development and validation of the global map of irrigation areas. Hydrology and Earth System Sciences 9, 535{547. doi:10.5194/hess-9-535-2005 (Nov. 2005).
+Siebert, S., Doll, P., Hoogeveen, J., Faures, J.-M., Frenken, K. & Feick, S. Development and validation of the global map of irrigation areas. Hydrology and Earth System Sciences 9, 535{547. doi:10.5194/hess-9-535-2005 (Nov. 2005).
 
 Solley, W. B., Pierce, R. R. & Perlman, H. Estimated Use of Water in the United
 States in 1995 tech. rep. (US Geological Survey Circular 1200, 1998), 50.

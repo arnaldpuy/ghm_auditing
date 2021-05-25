@@ -1195,3 +1195,5 @@ top <- plot_grid(legend, bottom, rel_heights = c(0.13, 0.87), ncol = 1)
 plot_grid(top, all.projection, labels = c("", "c"), ncol = 1)
 
 ```
+
+# References

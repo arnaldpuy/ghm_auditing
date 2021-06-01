@@ -1,5 +1,5 @@
 ---
-title: "Why global irrigation water withdrawal estimates are dangerously wrong"
+title: "The delusive accuracy of global irrigation water withdrawal estimates"
 subtitle: "R code"
 author: "Arnald Puy"
 header-includes:
@@ -38,7 +38,7 @@ knitr::opts_chunk$set(echo = TRUE, dev = "tikz")
 
 # Presentation
 
-This document presents the workflow of the Comment "Why global irrigation water withdrawal estimates are dangerously wrong", by A. Puy, R. Sheikholeslami, H. V. Gupta, J. W. Hall, S. Lo Piano, J. Meier, F. Pappenberger, A. Porporato, G. Vico, and A. Saltelli.
+This document presents the workflow of the Comment "The delusive accuracy of global irrigation water withdrawal estimates", by A. Puy, R. Sheikholeslami, H. V. Gupta, J. W. Hall, S. Lo Piano, J. Meier, F. Pappenberger, A. Porporato, G. Vico, and A. Saltelli.
 
 Questions about the code or the computational design should be addressed to A. Puy (\href{mailto:apuy@princeton.edu}{apuy@princeton.edu}, or \href{mailto:arnald.puy@pm.me}{arnald.puy@pm.me}).
 

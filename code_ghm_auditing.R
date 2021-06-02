@@ -1,8 +1,8 @@
-## ----setup, include=FALSE--------------------------------------------------------
+## ----setup, include=FALSE----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE, dev = "tikz")
 
 
-## ----initial, results="hide", message=FALSE, warning=FALSE-----------------------
+## ----initial, results="hide", message=FALSE, warning=FALSE-------------------
 
 # PRELIMINARY STEPS ---------------------------------------------------------------
 
@@ -45,7 +45,7 @@ checkpoint("2021-02-22",
            checkpointLocation = getwd())
 
 
-## ----irrigated_areas, cache=TRUE-------------------------------------------------
+## ----irrigated_areas, cache=TRUE---------------------------------------------
 
 # PLOT UNCERTAINTY IN IRRIGATED AREAS -----------------------------------------------
 
@@ -137,14 +137,14 @@ b <- ggplot(oasis, aes(x = x, y = y, group = name, linetype = name)) +
 cowplot::plot_grid(a, b, ncol = 2, labels = "auto", rel_widths = c(0.45, 0.55))
 
 
-## ----kc_only, cache=TRUE, dependson="plot_kc", fig.height=2.2, fig.width=2.4-----
+## ----kc_only, cache=TRUE, dependson="plot_kc", fig.height=2.2, fig.width=2.4----
 
 # PLOT K_C VALUES FOR SALT CEDAR ONLY ------------------------------------------
 
 a
 
 
-## ----calculations, cache=TRUE, dependson="plot_kc"-------------------------------
+## ----calculations, cache=TRUE, dependson="plot_kc"---------------------------
 
 # DEFINE SETTINGS --------------------------------------------------------------
 
@@ -442,7 +442,7 @@ melt(dt.tmp, measure.vars = c("$E_c$", "$E_a$", "$E_d$")) %>%
   theme_AP()
 
 
-## ----settings_factorial, cache=TRUE----------------------------------------------
+## ----settings_factorial, cache=TRUE------------------------------------------
 
 # DEFINE SETTINGS ------------------------------------------------------------------
 
@@ -451,7 +451,7 @@ params <- c("E_a", "E_c", "M_f")
 R <- 10^3
 
 
-## ----matrix_factorial, cache=TRUE, dependson="settings_factorial"----------------
+## ----matrix_factorial, cache=TRUE, dependson="settings_factorial"------------
 
 # DEFINE SAMPLE MATRIX -------------------------------------------------------------
 
@@ -558,7 +558,7 @@ data.table(y)[, .(min = min(y), max = max(y))]
 quantile(y, probs = c(0.025, 0.975))
 
 
-## ----uncertainty_factorial, cache=TRUE, dependson="model_factorial"--------------
+## ----uncertainty_factorial, cache=TRUE, dependson="model_factorial"----------
 
 # PLOT UNCERTAINTY -----------------------------------------------------------------
 
@@ -592,7 +592,7 @@ bottom <- cowplot::plot_grid(a, b, ncol = 2, labels = "auto")
 cowplot::plot_grid(legend, bottom, ncol = 1, rel_heights = c(0.15, 0.85))
 
 
-## ----oat_exploration, cache=TRUE, fig.height=2, fig.width=2.2--------------------
+## ----oat_exploration, cache=TRUE, fig.height=2, fig.width=2.2----------------
 
 # ASSESS THE FRACTION OF THE UNCERTAIN SPACE EXAMINED BY OAT -----------------------
 
@@ -632,7 +632,7 @@ data.table(k = 1:20, x = out) %>%
   )
 
 
-## ----functions_maps, cache=TRUE--------------------------------------------------
+## ----functions_maps, cache=TRUE----------------------------------------------
 
 # FUNCTIONS TO CONVERT LON LAT TO USA STATES AND COUNTRIES -------------------------
 
@@ -665,7 +665,7 @@ coords2country <- function(points) {
 }
 
 
-## ----read_maps, cache=TRUE, dependson="functions_maps"---------------------------
+## ----read_maps, cache=TRUE, dependson="functions_maps"-----------------------
 
 # READ IN RASTERS ------------------------------------------------------------------
 
@@ -704,7 +704,7 @@ out <- foreach(
 stopCluster(cl)
 
 
-## ----modify_rasters, cache=TRUE, dependson="read_maps"---------------------------
+## ----modify_rasters, cache=TRUE, dependson="read_maps"-----------------------
 
 # ARRANGE DATASET -----------------------------------------------------------------
 
@@ -763,7 +763,7 @@ ggplot(., aes(abs)) +
   theme_AP()
 
 
-## ----kc_wheat, cache=TRUE--------------------------------------------------------
+## ----kc_wheat, cache=TRUE----------------------------------------------------
 
 # CHECK THE UNCERTAINTY IN KC COEFFICIENTS FOR WHEAT IN TEXAS -----------------
 
@@ -809,7 +809,7 @@ c <- ggplot(data.table(v.final), aes(v.final)) +
 plot_grid(a, b, c, ncol = 3, labels = "auto")
 
 
-## ----climate_uvalde, cache=TRUE--------------------------------------------------
+## ----climate_uvalde, cache=TRUE----------------------------------------------
 
 # READ IN CLIMATIC DATA FOR UVALDE FOR JANUARY 2007-------------------------------
 
@@ -852,7 +852,7 @@ Gamma <- 0.0016286 * P / lambda
 Gamma
 
 
-## ----settings_full, cache=TRUE---------------------------------------------------
+## ----settings_full, cache=TRUE-----------------------------------------------
 
 # DEFINE SETTINGS ------------------------------------------------------------------
 
@@ -915,7 +915,7 @@ data.table(mat[1:N, ]) %>%
   facet_wrap(~variable, scales = "free_x")
 
 
-## ----define_model, cache=TRUE----------------------------------------------------
+## ----define_model, cache=TRUE------------------------------------------------
 
 # DEFINE THE MODEL -----------------------------------------------------------
 
@@ -948,14 +948,14 @@ y <- full_model(
 )
 
 
-## ----uncertainties_global, cache=TRUE, dependson="run_model"---------------------
+## ----uncertainties_global, cache=TRUE, dependson="run_model"-----------------
 
 # ASSESS UNCERTAINTIES -------------------------------------------------------
 
 unc <- plot_uncertainty(Y = y, N = N)
 
 
-## ----sensitivities_full, cache=TRUE, dependson="run_model"-----------------------
+## ----sensitivities_full, cache=TRUE, dependson="run_model"-------------------
 
 # ASSESS SENSITIVITIES ------------------------------------------------------------
 
@@ -989,7 +989,7 @@ second.order <- plot(ind, "second")
 # PLOT SCATTERPLOTS ---------------------------------------------------------------
 
 
-## ----oat_matrix, cache=TRUE, dependson=c("sample_matrix_full", "run_model")------
+## ----oat_matrix, cache=TRUE, dependson=c("sample_matrix_full", "run_model")----
 
 # CONSTRUCT SAMPLE MATRIX ---------------------------------------------------------
 
@@ -1007,7 +1007,7 @@ mat.oat <- X[(N + 1):nrow(X), ]
 colnames(mat.oat) <- params
 
 
-## ----model_oat, cache=TRUE, dependson=c("oat_matrix", "run_model")---------------
+## ----model_oat, cache=TRUE, dependson=c("oat_matrix", "run_model")-----------
 
 # RUN THE MODEL ------------------------------------------------------------------
 
@@ -1094,7 +1094,7 @@ d
 all.projection <- d # For later
 
 
-## ----stats_unc, cache=TRUE, dependson="unc_oat"----------------------------------
+## ----stats_unc, cache=TRUE, dependson="unc_oat"------------------------------
 
 # SOME STATISTICS --------------------------------------------------------------
 
@@ -1116,7 +1116,7 @@ stat.full.unc[, .(value = quantile(value, probs = probs.quantile)), variable] %>
 plot_grid(a, sobol.plot, second.order, ncol = 1, labels = "auto")
 
 
-## ----all_figures_comment, cache=TRUE, fig.height=4.5, fig.width=4.5--------------
+## ----all_figures_comment, cache=TRUE, fig.height=4.5, fig.width=4.5----------
 
 # PLOT --------------------------------------------------------------------------
 

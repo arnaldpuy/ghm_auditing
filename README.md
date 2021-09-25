@@ -1,7 +1,7 @@
 
 # The delusive accuracy of global irrigation water withdrawal estimates
 
-Arnald Puy, Razi Sheikholeslami, Hoshin V. Gupta, Jim W. Hall, Samuele Lo Piano, Jonas Meier, Florian Pappenberger, Amilcare Porporato, Giulia Vico, Andrea Saltelli.
+Arnald Puy, Razi Sheikholeslami, Hoshin V. Gupta, Jim W. Hall, Bruce Lankford, Samuele Lo Piano, Jonas Meier, Florian Pappenberger, Amilcare Porporato, Giulia Vico, Andrea Saltelli.
 
 ## Information
 We provide the code in `.R`, `.rmd` and `.pdf` along with a detailed narration of the steps needed to reproduce our work and the software requirements.

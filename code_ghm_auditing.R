@@ -1,8 +1,8 @@
-## ----setup, include=FALSE----------------------------------------------------
+## ----setup, include=FALSE-----------------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE, dev = "tikz")
 
 
-## ----initial, results="hide", message=FALSE, warning=FALSE-------------------
+## ----initial, results="hide", message=FALSE, warning=FALSE--------------------------
 
 # PRELIMINARY STEPS ---------------------------------------------------------------
 
@@ -40,12 +40,12 @@ theme_AP <- function() {
 dir.create(".checkpoint")
 library("checkpoint")
 
-checkpoint("2021-02-22", 
-           R.version ="4.0.3", 
+checkpoint("2021-02-22",
+           R.version ="4.0.3",
            checkpointLocation = getwd())
 
 
-## ----irrigated_areas, cache=TRUE---------------------------------------------
+## ----irrigated_areas, cache=TRUE----------------------------------------------------
 
 # PLOT UNCERTAINTY IN IRRIGATED AREAS -----------------------------------------------
 
@@ -63,7 +63,7 @@ continent_list <- list(c("Africa", "Americas"), c("Asia", "Europe"))
 # Plot
 gg <- list()
 for (i in 1:length(continent_list)) {
-  gg[[i]] <- ggplot(dt[Continent %in% continent_list[[i]]], 
+  gg[[i]] <- ggplot(dt[Continent %in% continent_list[[i]]],
                     aes(reorder(Country, value), value)) +
     geom_point(stat = "identity", aes(color = variable)) +
     scale_y_log10(
@@ -137,14 +137,14 @@ b <- ggplot(oasis, aes(x = x, y = y, group = name, linetype = name)) +
 cowplot::plot_grid(a, b, ncol = 2, labels = "auto", rel_widths = c(0.45, 0.55))
 
 
-## ----kc_only, cache=TRUE, dependson="plot_kc", fig.height=2.2, fig.width=2.4----
+## ----kc_only, cache=TRUE, dependson="plot_kc", fig.height=2.2, fig.width=2.4--------
 
 # PLOT K_C VALUES FOR SALT CEDAR ONLY ------------------------------------------
 
 a
 
 
-## ----calculations, cache=TRUE, dependson="plot_kc"---------------------------
+## ----calculations, cache=TRUE, dependson="plot_kc"----------------------------------
 
 # DEFINE SETTINGS --------------------------------------------------------------
 
@@ -267,13 +267,13 @@ extract_unc <- function(out, N = N) {
 
 plots.unc <- lapply(list(y, y.kc), function(x) extract_unc(out = x, N = N))
 
-plots.unc[[1]] <- plots.unc[[1]] + labs(x = "$ET_0$ (mm d$^{-1}$)", y = "Counts") +
+plots.unc[[1]] <- plots.unc[[1]] + labs(x = "$ET_0$ (mm)", y = "Counts") +
   scale_x_continuous(limits = c(0, 800))
-plots.unc[[2]] <- plots.unc[[2]] + labs(x = "$ET_c$ (mm d$^{-1}$)", y = "Counts") +
+plots.unc[[2]] <- plots.unc[[2]] + labs(x = "$ET_c$ (mm)", y = "Counts") +
   scale_x_continuous(limits = c(0, 800))
 
 etc <- plots.unc[[2]] + theme(legend.position = "top") +
-  scale_fill_manual(labels = c("FAO-56 Penman Monteith", "Priestley-Taylor"), 
+  scale_fill_manual(labels = c("FAO-56 Penman Monteith", "Priestley-Taylor"),
                     values = wes_palette(n = 2, name = "Chevalier1"))
   # For later
 
@@ -328,13 +328,13 @@ extract_sobol <- function(data) {
     .[, parameters:= factor(parameters, levels = c("$\\Delta$", "$\\gamma$",
                                                    "$A$", "$T_a$", "$w$", "$v$",
                                                    "$\\alpha$", "$k_c$"))] %>%
-    ggplot(., aes(parameters, original, fill = sensitivity)) + 
-    geom_bar(stat = "identity", 
-             position = position_dodge(0.6), color = "black") + 
-    scale_y_continuous(breaks = scales::pretty_breaks(n = 3)) + 
-    labs(x = "", y = "Sobol' index") + 
-    ggplot2::scale_fill_discrete(name = "Sobol' indices", 
-                                 labels = c(expression(S[italic(i)]), expression(T[italic(i)]))) + 
+    ggplot(., aes(parameters, original, fill = sensitivity)) +
+    geom_bar(stat = "identity",
+             position = position_dodge(0.6), color = "black") +
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 3)) +
+    labs(x = "", y = "Sobol' index") +
+    ggplot2::scale_fill_discrete(name = "Sobol' indices",
+                                 labels = c(expression(S[italic(i)]), expression(T[italic(i)]))) +
     theme_AP() +
     theme(legend.position = "none") +
     facet_grid(~ method,
@@ -442,7 +442,7 @@ melt(dt.tmp, measure.vars = c("$E_c$", "$E_a$", "$E_d$")) %>%
   theme_AP()
 
 
-## ----settings_factorial, cache=TRUE------------------------------------------
+## ----settings_factorial, cache=TRUE-------------------------------------------------
 
 # DEFINE SETTINGS ------------------------------------------------------------------
 
@@ -451,7 +451,7 @@ params <- c("E_a", "E_c", "M_f")
 R <- 10^3
 
 
-## ----matrix_factorial, cache=TRUE, dependson="settings_factorial"------------
+## ----matrix_factorial, cache=TRUE, dependson="settings_factorial"-------------------
 
 # DEFINE SAMPLE MATRIX -------------------------------------------------------------
 
@@ -558,13 +558,13 @@ data.table(y)[, .(min = min(y), max = max(y))]
 quantile(y, probs = c(0.025, 0.975))
 
 
-## ----uncertainty_factorial, cache=TRUE, dependson="model_factorial"----------
+## ----uncertainty_factorial, cache=TRUE, dependson="model_factorial"-----------------
 
-# PLOT UNCERTAINTY -----------------------------------------------------------------
+# PLOT UNCERTAINTY ------------------------------------------------------------------
 
 a <- plot_uncertainty(Y = y, N = N) +
   labs(x = "Irrigation efficiency", y = "Counts") +
-  geom_vline(xintercept = 0.38, lty = 2, color = "red")
+  geom_vline(xintercept = 0.38, lty = 2, color = "red", size = 2)
 a
 
 ep <- a # For later
@@ -592,7 +592,7 @@ bottom <- cowplot::plot_grid(a, b, ncol = 2, labels = "auto")
 cowplot::plot_grid(legend, bottom, ncol = 1, rel_heights = c(0.15, 0.85))
 
 
-## ----oat_exploration, cache=TRUE, fig.height=2, fig.width=2.2----------------
+## ----oat_exploration, cache=TRUE, fig.height=2, fig.width=2.2-----------------------
 
 # ASSESS THE FRACTION OF THE UNCERTAIN SPACE EXAMINED BY OAT -----------------------
 
@@ -603,7 +603,7 @@ oat_exploration <- function(k) pi^((k) / 2) * (0.5)^(k) / gamma(1 + k / 2)
 out <- sapply(1:20, function(x) oat_exploration(x))
 
 # Plot
-data.table(k = 1:20, x = out) %>%
+oat.plot <- data.table(k = 1:20, x = out) %>%
   ggplot(., aes(k, x)) +
   geom_point() +
   scale_y_log10(
@@ -614,7 +614,7 @@ data.table(k = 1:20, x = out) %>%
   geom_line() +
   labs(
     y = "Fraction explored",
-    x = "$k$"
+    x = "Nº of parameters"
   ) +
   theme_bw() +
   theme(
@@ -630,9 +630,10 @@ data.table(k = 1:20, x = out) %>%
       color = NA
     )
   )
+oat.plot
 
 
-## ----functions_maps, cache=TRUE----------------------------------------------
+## ----functions_maps, cache=TRUE-----------------------------------------------------
 
 # FUNCTIONS TO CONVERT LON LAT TO USA STATES AND COUNTRIES -------------------------
 
@@ -665,7 +666,7 @@ coords2country <- function(points) {
 }
 
 
-## ----read_maps, cache=TRUE, dependson="functions_maps"-----------------------
+## ----read_maps, cache=TRUE, dependson="functions_maps"------------------------------
 
 # READ IN RASTERS ------------------------------------------------------------------
 
@@ -704,7 +705,7 @@ out <- foreach(
 stopCluster(cl)
 
 
-## ----modify_rasters, cache=TRUE, dependson="read_maps"-----------------------
+## ----modify_rasters, cache=TRUE, dependson="read_maps"------------------------------
 
 # ARRANGE DATASET -----------------------------------------------------------------
 
@@ -763,7 +764,7 @@ ggplot(., aes(abs)) +
   theme_AP()
 
 
-## ----kc_wheat, cache=TRUE----------------------------------------------------
+## ----kc_wheat, cache=TRUE-----------------------------------------------------------
 
 # CHECK THE UNCERTAINTY IN KC COEFFICIENTS FOR WHEAT IN TEXAS -----------------
 
@@ -809,7 +810,7 @@ c <- ggplot(data.table(v.final), aes(v.final)) +
 plot_grid(a, b, c, ncol = 3, labels = "auto")
 
 
-## ----climate_uvalde, cache=TRUE----------------------------------------------
+## ----climate_uvalde, cache=TRUE-----------------------------------------------------
 
 # READ IN CLIMATIC DATA FOR UVALDE FOR JANUARY 2007-------------------------------
 
@@ -852,11 +853,11 @@ Gamma <- 0.0016286 * P / lambda
 Gamma
 
 
-## ----settings_full, cache=TRUE-----------------------------------------------
+## ----settings_full, cache=TRUE------------------------------------------------------
 
 # DEFINE SETTINGS ------------------------------------------------------------------
 
-N <- 2^15
+N <- 2^11
 R <- 10^3
 type <- "R"
 order <- "second"
@@ -915,22 +916,33 @@ data.table(mat[1:N, ]) %>%
   facet_wrap(~variable, scales = "free_x")
 
 
-## ----define_model, cache=TRUE------------------------------------------------
+## ----define_model, cache=TRUE-------------------------------------------------------
 
-# DEFINE THE MODEL -----------------------------------------------------------
+# DEFINE THE MODEL ----------------------------------------------------------
 
 full_model <- function(I_a, Delta, A, gamma, T_a, w, v, k_c, P, E_a, E_c, M_f) {
-  out <- ((k_c * ((0.408 * Delta * A + gamma * (900 / (T_a + 273)) * w * v) /
-                    Delta + gamma * (1 + 0.34 * w))) - P) / (E_a * E_c * M_f)
-  # Divide mm d-1 by 1000 to get m d-1
-  y <- (out / 10^3) * I_a # Output is m3 ha
+  ET0 <- ((0.408 * Delta * A + gamma * (900 / (T_a + 273)) * w * v) /
+            Delta + gamma * (1 + 0.34 * w))
+  ETc <- ET0 * k_c
+  Ep <- E_a * E_c * M_f
+  y <- ((ETc - P) * I_a) / Ep
+  y <- y * 10 #from mm to m3 ha
+  return(y)
+}
+
+full_model2 <- function(I_a, Delta, A, gamma, T_a, w, v, k_c, P, E_a, E_c, M_f) {
+  ET0 <- ((0.408 * Delta * A + gamma * (900 / (T_a + 273)) * w * v) /
+            Delta + gamma * (1 + 0.34 * w))
+  ETc <- ET0 * k_c
+  Ep <- E_a * E_c * M_f
+  y <- (((ETc - P) / 10^3) *(I_a * 10^4)) / Ep
   return(y)
 }
 
 
-## ----run_model, cache=TRUE, dependson=c("define_model", "sample_matrix_full")----
+## ----run_model, cache=TRUE, dependson=c("define_model", "sample_matrix_full")-------
 
-# RUN THE MODEL -------------------------------------------------------------
+# RUN THE MODEL ------------------------------------------------------------
 
 y <- full_model(
   I_a = mat[, "I_a"],
@@ -947,17 +959,31 @@ y <- full_model(
   M_f = mat[, "M_f"]
 )
 
+y2 <- full_model2(
+  I_a = mat[, "I_a"],
+  Delta = mat[, "Delta"],
+  A = mat[, "A"],
+  gamma = mat[, "gamma"],
+  T_a = mat[, "T_a"],
+  w = mat[, "w"],
+  v = mat[, "v"],
+  k_c = mat[, "k_c"],
+  P = mat[, "P"],
+  E_a = mat[, "E_a"],
+  E_c = mat[, "E_c"],
+  M_f = mat[, "M_f"]
+)
 
-## ----uncertainties_global, cache=TRUE, dependson="run_model"-----------------
+## ----uncertainties_global, cache=TRUE, dependson="run_model"------------------------
 
-# ASSESS UNCERTAINTIES -------------------------------------------------------
+# ASSESS UNCERTAINTIES ------------------------------------------------------
 
 unc <- plot_uncertainty(Y = y, N = N)
 
 
-## ----sensitivities_full, cache=TRUE, dependson="run_model"-------------------
+## ----sensitivities_full, cache=TRUE, dependson="run_model"--------------------------
 
-# ASSESS SENSITIVITIES ------------------------------------------------------------
+# ASSESS SENSITIVITIES -----------------------------------------------------------
 
 # Compute sobol' indices
 ind <- sobol_indices(
@@ -979,19 +1005,19 @@ sobol.plot <- plot(ind) +
 
 ## ----second_order, cache=TRUE, dependson="sensitivities_full", fig.width=4, fig.height=2.4----
 
-# PLOT SECOND-ORDER INDICES -------------------------------------------------------
+# PLOT SECOND-ORDER INDICES ------------------------------------------------------
 
 second.order <- plot(ind, "second")
 
 
 ## ----plot_sensitivities_scatter, cache=TRUE, dependson=c("sample_matrix_full", "settings_full", "run_model"), fig.height=6, fig.width=5.5----
 
-# PLOT SCATTERPLOTS ---------------------------------------------------------------
+# PLOT SCATTERPLOTS --------------------------------------------------------------
 
 
-## ----oat_matrix, cache=TRUE, dependson=c("sample_matrix_full", "run_model")----
+## ----oat_matrix, cache=TRUE, dependson=c("sample_matrix_full", "run_model")---------
 
-# CONSTRUCT SAMPLE MATRIX ---------------------------------------------------------
+# CONSTRUCT SAMPLE MATRIX --------------------------------------------------------
 
 A <- mat[1:N, ]
 B <- matrix(rep(Rfast::colmeans(A), each = N), nrow = N)
@@ -1007,9 +1033,9 @@ mat.oat <- X[(N + 1):nrow(X), ]
 colnames(mat.oat) <- params
 
 
-## ----model_oat, cache=TRUE, dependson=c("oat_matrix", "run_model")-----------
+## ----model_oat, cache=TRUE, dependson=c("oat_matrix", "run_model")------------------
 
-# RUN THE MODEL ------------------------------------------------------------------
+# RUN THE MODEL -----------------------------------------------------------------
 
 y.oat <- full_model(
   I_a = mat.oat[, "I_a"],
@@ -1027,9 +1053,9 @@ y.oat <- full_model(
 )
 
 
-## ----single_point, cache=TRUE, dependson=c("sample_matrix_full", "oat_matrix")----
+## ----single_point, cache=TRUE, dependson=c("sample_matrix_full", "oat_matrix")------
 
-# COMPUTE A SINGLE-POINT ESTIMATE USING MEAN VALUES-------------------------------
+# COMPUTE A SINGLE-POINT ESTIMATE USING MEAN VALUES------------------------------
 
 vec_means <- colMeans(A)
 
@@ -1053,7 +1079,7 @@ y.point
 
 ## ----unc_oat, cache=TRUE, dependson=c("model_oat", "settings_full", "sample_matrix_full"), fig.height=3, fig.width=4.5----
 
-# ASSESS UNCERTAINTIES --------------------------------------------------------
+# ASSESS UNCERTAINTIES -------------------------------------------------------
 
 unc.oat <- plot_uncertainty(Y = y.oat, N = N)
 
@@ -1063,7 +1089,7 @@ colnames(full.unc) <- c("Global", "OAT")
 a <- melt(full.unc, measure.vars = colnames(full.unc)) %>%
   ggplot(., aes(value, fill = variable)) +
   geom_histogram(position = "identity", alpha = 0.3, color = "black") +
-  labs(x = "Irrigation water withdrawal (m$^3$ ha d$^{-1}$)", y = "Counts") +
+  labs(x = "Irrigation water withdrawal (m$^3$)", y = "Counts") +
   scale_x_log10(
     breaks = trans_breaks("log10", function(x) 10^x),
     labels = trans_format("log10", scales::math_format(10^.x))
@@ -1079,7 +1105,7 @@ d <- melt(full.unc, measure.vars = colnames(full.unc)) %>%
   .[variable == "Global"] %>%
   ggplot(., aes(value)) +
   geom_histogram(position = "identity", alpha = 0.3, color = "black", fill = "white") +
-  labs(x = "Irrigation water withdrawal (m$^3$ ha d$^{-1}$)", y = "Counts") +
+  labs(x = "Irrigation water withdrawal (m$^3$)", y = "Counts") +
   scale_x_log10(
     breaks = trans_breaks("log10", function(x) 10^x),
     labels = trans_format("log10", scales::math_format(10^.x))
@@ -1094,9 +1120,14 @@ d
 all.projection <- d # For later
 
 
-## ----stats_unc, cache=TRUE, dependson="unc_oat"------------------------------
+## ----export_dt, cache=TRUE----------------------------------------------------------
+fwrite(full.unc, "full.unc.csv")
 
-# SOME STATISTICS --------------------------------------------------------------
+
+
+## ----stats_unc, cache=TRUE, dependson="unc_oat"-------------------------------------
+
+# SOME STATISTICS ------------------------------------------------------------
 
 stat.full.unc <- melt(full.unc, measure.vars = c("Global", "OAT"))
 stat.full.unc[, .(min = min(value), max = max(value)), variable]
@@ -1111,18 +1142,38 @@ stat.full.unc[, .(value = quantile(value, probs = probs.quantile)), variable] %>
 
 ## ----merge_full_oat, cache=TRUE, dependson=c("uncertainties_global", "unc_oat", "sensitivities_full", "second_order"), fig.height = 6, fig.width = 4.7----
 
-# MERGE UNCERTAINTY AND SOBOL' INDICES ---------------------------------------
+# MERGE UNCERTAINTY AND SOBOL' INDICES -------------------------------------
 
 plot_grid(a, sobol.plot, second.order, ncol = 1, labels = "auto")
 
 
-## ----all_figures_comment, cache=TRUE, fig.height=4.5, fig.width=4.5----------
+## ----only_global, cache=TRUE, dependson="unc_oat", fig.height=2.1, fig.width=3.1----
 
-# PLOT --------------------------------------------------------------------------
+melt(full.unc, measure.vars = colnames(full.unc)) %>%
+  ggplot(., aes(value, fill = variable)) +
+  geom_histogram(position = "identity", alpha = 0.3, color = "black") +
+  labs(x = "IWW",
+       y = "Counts") +
+  scale_x_log10(breaks = trans_breaks("log10",function(x) 10^x),
+                labels = trans_format("log10", scales::math_format(10^.x))) +
+  geom_vline(xintercept = 27.064, lty = 2, color = "red", size = 2) +
+  scale_fill_manual(values = wes_palette(2, name = "Chevalier1"), name = "Uncertainty \n analysis") +
+  theme_AP() +
+  theme(legend.position = c(0.3, 0.5))
+
+
+## ----all_figures_comment, cache=TRUE, fig.height=4.2, fig.width=4-------------------
+
+# PLOT -------------------------------------------------------------------------
 
 legend <- get_legend(plots.unc[[2]] + theme(legend.position = "top"))
 bottom <- plot_grid(etc + theme(legend.position = "none"), ep, labels = "auto")
 top <- plot_grid(legend, bottom, rel_heights = c(0.13, 0.87), ncol = 1)
 plot_grid(top, all.projection, labels = c("", "c"), ncol = 1)
 
+
+
+## ----his_unc, cache=TRUE, fig.height=2, fig.width=3---------------------------------
+
+d + labs(x = "IWW", y = "Counts")
 

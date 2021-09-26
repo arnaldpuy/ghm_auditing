@@ -1202,7 +1202,7 @@ melt(full.unc, measure.vars = colnames(full.unc)) %>%
 
 ```{r all_figures_comment, cache=TRUE, fig.height=4.2, fig.width=4}
 
-# PLOT -------------------------------------------------------------------------
+# PLOT ------------------------------------------------------------------------
 
 legend <- get_legend(plots.unc[[2]] + theme(legend.position = "top"))
 bottom <- plot_grid(etc + theme(legend.position = "none"), ep, labels = "auto")

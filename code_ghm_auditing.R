@@ -40,8 +40,8 @@ theme_AP <- function() {
 dir.create(".checkpoint")
 library("checkpoint")
 
-checkpoint("2021-02-22",
-           R.version ="4.0.3",
+checkpoint("2021-02-22", 
+           R.version ="4.0.3", 
            checkpointLocation = getwd())
 
 
@@ -63,7 +63,7 @@ continent_list <- list(c("Africa", "Americas"), c("Asia", "Europe"))
 # Plot
 gg <- list()
 for (i in 1:length(continent_list)) {
-  gg[[i]] <- ggplot(dt[Continent %in% continent_list[[i]]],
+  gg[[i]] <- ggplot(dt[Continent %in% continent_list[[i]]], 
                     aes(reorder(Country, value), value)) +
     geom_point(stat = "identity", aes(color = variable)) +
     scale_y_log10(
@@ -273,7 +273,7 @@ plots.unc[[2]] <- plots.unc[[2]] + labs(x = "$ET_c$ (mm)", y = "Counts") +
   scale_x_continuous(limits = c(0, 800))
 
 etc <- plots.unc[[2]] + theme(legend.position = "top") +
-  scale_fill_manual(labels = c("FAO-56 Penman Monteith", "Priestley-Taylor"),
+  scale_fill_manual(labels = c("FAO-56 Penman Monteith", "Priestley-Taylor"), 
                     values = wes_palette(n = 2, name = "Chevalier1"))
   # For later
 
@@ -328,13 +328,13 @@ extract_sobol <- function(data) {
     .[, parameters:= factor(parameters, levels = c("$\\Delta$", "$\\gamma$",
                                                    "$A$", "$T_a$", "$w$", "$v$",
                                                    "$\\alpha$", "$k_c$"))] %>%
-    ggplot(., aes(parameters, original, fill = sensitivity)) +
-    geom_bar(stat = "identity",
-             position = position_dodge(0.6), color = "black") +
-    scale_y_continuous(breaks = scales::pretty_breaks(n = 3)) +
-    labs(x = "", y = "Sobol' index") +
-    ggplot2::scale_fill_discrete(name = "Sobol' indices",
-                                 labels = c(expression(S[italic(i)]), expression(T[italic(i)]))) +
+    ggplot(., aes(parameters, original, fill = sensitivity)) + 
+    geom_bar(stat = "identity", 
+             position = position_dodge(0.6), color = "black") + 
+    scale_y_continuous(breaks = scales::pretty_breaks(n = 3)) + 
+    labs(x = "", y = "Sobol' index") + 
+    ggplot2::scale_fill_discrete(name = "Sobol' indices", 
+                                 labels = c(expression(S[italic(i)]), expression(T[italic(i)]))) + 
     theme_AP() +
     theme(legend.position = "none") +
     facet_grid(~ method,
@@ -857,7 +857,7 @@ Gamma
 
 # DEFINE SETTINGS ------------------------------------------------------------------
 
-N <- 2^11
+N <- 2^15
 R <- 10^3
 type <- "R"
 order <- "second"
@@ -930,15 +930,6 @@ full_model <- function(I_a, Delta, A, gamma, T_a, w, v, k_c, P, E_a, E_c, M_f) {
   return(y)
 }
 
-full_model2 <- function(I_a, Delta, A, gamma, T_a, w, v, k_c, P, E_a, E_c, M_f) {
-  ET0 <- ((0.408 * Delta * A + gamma * (900 / (T_a + 273)) * w * v) /
-            Delta + gamma * (1 + 0.34 * w))
-  ETc <- ET0 * k_c
-  Ep <- E_a * E_c * M_f
-  y <- (((ETc - P) / 10^3) *(I_a * 10^4)) / Ep
-  return(y)
-}
-
 
 ## ----run_model, cache=TRUE, dependson=c("define_model", "sample_matrix_full")-------
 
@@ -959,20 +950,6 @@ y <- full_model(
   M_f = mat[, "M_f"]
 )
 
-y2 <- full_model2(
-  I_a = mat[, "I_a"],
-  Delta = mat[, "Delta"],
-  A = mat[, "A"],
-  gamma = mat[, "gamma"],
-  T_a = mat[, "T_a"],
-  w = mat[, "w"],
-  v = mat[, "v"],
-  k_c = mat[, "k_c"],
-  P = mat[, "P"],
-  E_a = mat[, "E_a"],
-  E_c = mat[, "E_c"],
-  M_f = mat[, "M_f"]
-)
 
 ## ----uncertainties_global, cache=TRUE, dependson="run_model"------------------------
 
@@ -1152,7 +1129,7 @@ plot_grid(a, sobol.plot, second.order, ncol = 1, labels = "auto")
 melt(full.unc, measure.vars = colnames(full.unc)) %>%
   ggplot(., aes(value, fill = variable)) +
   geom_histogram(position = "identity", alpha = 0.3, color = "black") +
-  labs(x = "IWW",
+  labs(x = "IWW", 
        y = "Counts") +
   scale_x_log10(breaks = trans_breaks("log10",function(x) 10^x),
                 labels = trans_format("log10", scales::math_format(10^.x))) +
@@ -1164,7 +1141,7 @@ melt(full.unc, measure.vars = colnames(full.unc)) %>%
 
 ## ----all_figures_comment, cache=TRUE, fig.height=4.2, fig.width=4-------------------
 
-# PLOT -------------------------------------------------------------------------
+# PLOT ------------------------------------------------------------------------
 
 legend <- get_legend(plots.unc[[2]] + theme(legend.position = "top"))
 bottom <- plot_grid(etc + theme(legend.position = "none"), ep, labels = "auto")

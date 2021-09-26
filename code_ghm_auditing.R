@@ -918,12 +918,12 @@ data.table(mat[1:N, ]) %>%
 
 ## ----define_model, cache=TRUE-------------------------------------------------------
 
-# DEFINE THE MODEL ----------------------------------------------------------
+# DEFINE THE MODEL --------------------------------------------------------
 
 full_model <- function(I_a, Delta, A, gamma, T_a, w, v, k_c, P, E_a, E_c, M_f) {
-  ET0 <- ((0.408 * Delta * A + gamma * (900 / (T_a + 273)) * w * v) /
-            Delta + gamma * (1 + 0.34 * w))
-  ETc <- ET0 * k_c
+  ET0 <- (((0.408 * Delta * A + gamma * (900 / (T_a + 273)) * w * v) /
+            Delta + gamma * (1 + 0.34 * w))) / 31 # To get a daily value
+  ETc <- ET0 * k_c 
   Ep <- E_a * E_c * M_f
   y <- ((ETc - P) * I_a) / Ep
   y <- y * 10 #from mm to m3 ha
@@ -933,7 +933,7 @@ full_model <- function(I_a, Delta, A, gamma, T_a, w, v, k_c, P, E_a, E_c, M_f) {
 
 ## ----run_model, cache=TRUE, dependson=c("define_model", "sample_matrix_full")-------
 
-# RUN THE MODEL ------------------------------------------------------------
+# RUN THE MODEL -----------------------------------------------------------
 
 y <- full_model(
   I_a = mat[, "I_a"],
@@ -953,14 +953,14 @@ y <- full_model(
 
 ## ----uncertainties_global, cache=TRUE, dependson="run_model"------------------------
 
-# ASSESS UNCERTAINTIES ------------------------------------------------------
+# ASSESS UNCERTAINTIES ----------------------------------------------------
 
 unc <- plot_uncertainty(Y = y, N = N)
 
 
 ## ----sensitivities_full, cache=TRUE, dependson="run_model"--------------------------
 
-# ASSESS SENSITIVITIES -----------------------------------------------------------
+# ASSESS SENSITIVITIES ----------------------------------------------------------
 
 # Compute sobol' indices
 ind <- sobol_indices(
@@ -982,19 +982,19 @@ sobol.plot <- plot(ind) +
 
 ## ----second_order, cache=TRUE, dependson="sensitivities_full", fig.width=4, fig.height=2.4----
 
-# PLOT SECOND-ORDER INDICES ------------------------------------------------------
+# PLOT SECOND-ORDER INDICES -----------------------------------------------------
 
 second.order <- plot(ind, "second")
 
 
 ## ----plot_sensitivities_scatter, cache=TRUE, dependson=c("sample_matrix_full", "settings_full", "run_model"), fig.height=6, fig.width=5.5----
 
-# PLOT SCATTERPLOTS --------------------------------------------------------------
+# PLOT SCATTERPLOTS -------------------------------------------------------------
 
 
 ## ----oat_matrix, cache=TRUE, dependson=c("sample_matrix_full", "run_model")---------
 
-# CONSTRUCT SAMPLE MATRIX --------------------------------------------------------
+# CONSTRUCT SAMPLE MATRIX -------------------------------------------------------
 
 A <- mat[1:N, ]
 B <- matrix(rep(Rfast::colmeans(A), each = N), nrow = N)
@@ -1012,7 +1012,7 @@ colnames(mat.oat) <- params
 
 ## ----model_oat, cache=TRUE, dependson=c("oat_matrix", "run_model")------------------
 
-# RUN THE MODEL -----------------------------------------------------------------
+# RUN THE MODEL ----------------------------------------------------------------
 
 y.oat <- full_model(
   I_a = mat.oat[, "I_a"],
@@ -1032,7 +1032,7 @@ y.oat <- full_model(
 
 ## ----single_point, cache=TRUE, dependson=c("sample_matrix_full", "oat_matrix")------
 
-# COMPUTE A SINGLE-POINT ESTIMATE USING MEAN VALUES------------------------------
+# COMPUTE A SINGLE-POINT ESTIMATE USING MEAN VALUES-----------------------------
 
 vec_means <- colMeans(A)
 
@@ -1056,7 +1056,7 @@ y.point
 
 ## ----unc_oat, cache=TRUE, dependson=c("model_oat", "settings_full", "sample_matrix_full"), fig.height=3, fig.width=4.5----
 
-# ASSESS UNCERTAINTIES -------------------------------------------------------
+# ASSESS UNCERTAINTIES ------------------------------------------------------
 
 unc.oat <- plot_uncertainty(Y = y.oat, N = N)
 
@@ -1104,7 +1104,7 @@ fwrite(full.unc, "full.unc.csv")
 
 ## ----stats_unc, cache=TRUE, dependson="unc_oat"-------------------------------------
 
-# SOME STATISTICS ------------------------------------------------------------
+# SOME STATISTICS -----------------------------------------------------------
 
 stat.full.unc <- melt(full.unc, measure.vars = c("Global", "OAT"))
 stat.full.unc[, .(min = min(value), max = max(value)), variable]
@@ -1119,7 +1119,7 @@ stat.full.unc[, .(value = quantile(value, probs = probs.quantile)), variable] %>
 
 ## ----merge_full_oat, cache=TRUE, dependson=c("uncertainties_global", "unc_oat", "sensitivities_full", "second_order"), fig.height = 6, fig.width = 4.7----
 
-# MERGE UNCERTAINTY AND SOBOL' INDICES -------------------------------------
+# MERGE UNCERTAINTY AND SOBOL' INDICES ------------------------------------
 
 plot_grid(a, sobol.plot, second.order, ncol = 1, labels = "auto")
 
@@ -1141,7 +1141,7 @@ melt(full.unc, measure.vars = colnames(full.unc)) %>%
 
 ## ----all_figures_comment, cache=TRUE, fig.height=4.2, fig.width=4-------------------
 
-# PLOT ------------------------------------------------------------------------
+# PLOT -----------------------------------------------------------------------
 
 legend <- get_legend(plots.unc[[2]] + theme(legend.position = "top"))
 bottom <- plot_grid(etc + theme(legend.position = "none"), ep, labels = "auto")
@@ -1152,5 +1152,5 @@ plot_grid(top, all.projection, labels = c("", "c"), ncol = 1)
 
 ## ----his_unc, cache=TRUE, fig.height=2, fig.width=3---------------------------------
 
-d + labs(x = "IWW", y = "Counts")
+d + labs(x = "IWW", y ="Counts")
 
